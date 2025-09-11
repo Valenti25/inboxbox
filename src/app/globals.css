@@ -112,6 +112,18 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.071);
 }
+/* globals.css */
+@property --bg1 {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #F24822; 
+}
+@property --bg2 {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #D93B16; 
+}
+
 
 @layer base {
   * {
