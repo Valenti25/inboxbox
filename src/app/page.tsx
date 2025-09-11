@@ -13,7 +13,6 @@ import LoginForm, {
   FormValues as LoginFormValues,
 } from "@/components/pages/landing/LoginForm";
 import { useIsMobile } from "@/hooks/use-mobile";
-
 interface ComponentProps {
   step: number;
   form: UseFormReturn<LoginFormValues>;
@@ -36,11 +35,8 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
     };
 
     measure();
-
-    let raf1 = 0;
-    let raf2 = 0;
-    raf1 = requestAnimationFrame(measure);
-    raf2 = requestAnimationFrame(measure);
+    const raf1 = requestAnimationFrame(measure);
+    const raf2 = requestAnimationFrame(measure);
 
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -189,31 +185,22 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 
 /* ========================= Mobile ========================= */
 
-/* ========================= Mobile ========================= */
-
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
   const containerVariants = {
-    step1: { width: "100%", height: "100%", scale: 2, borderRadius: "0" },
-    step2: { width: "auto", height: "auto", scale: 1, borderRadius: "16px" },
-    step3: { width: "auto", height: "auto", scale: 1, borderRadius: "16px" },
-    step4: {
-      width: "90%",
-      height: "auto",
-      scale: 1,
-      y: -12,
-      borderRadius: "16px",
-    },
+    step1: { width: "100%", height: "100%", scale: 2, "--r": "0px" },
+    step2: { width: "auto", height: "auto", scale: 1, "--r": "16px" },
+    step3: { width: "auto", height: "auto", scale: 1, "--r": "16px" },
+    step4: { width: "90%", height: "auto", scale: 1, y: -12, "--r": "16px" },
     step6: {
       width: "90%",
       height: "auto",
       scale: 1,
       y: [-12, -4, 0] as number[],
-      borderRadius: "16px",
+      "--r": "16px",
       transition: { duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
     },
   } as const;
 
-  // กลุ่มคอนเทนต์ (โชว์เฉพาะ step6)
   const groupVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -235,14 +222,64 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     },
   } as const;
 
-  // === Crossfade Icon: ไอคอน1 (white) ↔ ไอคอน2 (color) ===
-  // - initial={false} กันวาบตอน mount
-  // - absolute ซ้อนตำแหน่งเดียวกัน, will-change เพื่อ perf
-  // - pointer-events: none, aria-hidden เพื่อลด interactivity ไม่จำเป็น
-  function CrossfadeLogo({ showWhite }: { showWhite: boolean }) {
+  /** ---------- FIX FLICKER ---------- */
+  const [showWhiteLogo, setShowWhiteLogo] = useState(true);
+  const phaseRef = useRef<"orange" | "white">("orange");
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const nextPhase: "orange" | "white" = step < 3 ? "orange" : "white";
+    if (phaseRef.current === nextPhase) return;
+    phaseRef.current = nextPhase;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (nextPhase === "orange") {
+      setShowWhiteLogo(true);
+    } else {
+      setShowWhiteLogo(true);
+      timerRef.current = window.setTimeout(() => setShowWhiteLogo(false), 220);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [step]);
+  /** -------------------------------- */
+
+  // โลโก้ crossfade — คงอยู่ทั้งสองรูป, ไม่ re-mount, ปิดการ transform ที่ layer รูป
+  const CrossfadeLogo = ({ showWhite }: { showWhite: boolean }) => {
     const duration = 0.35;
     const ease = cubicBezier(0.42, 0, 0.58, 1);
+    const delayColorIn = 0.18;
     const size = 44;
+
+    const layerStyle: React.CSSProperties = {
+      // iOS/Safari opacity/transform glitch mitigation
+      WebkitBackfaceVisibility: "hidden",
+      backfaceVisibility: "hidden",
+      willChange: "opacity",
+      transform: "translateZ(0)",
+    };
+
+    const whiteVariants = {
+      visible: { opacity: 1, transition: { duration, ease, delay: 0 } },
+      hidden: { opacity: 0, transition: { duration, ease, delay: 0 } },
+    } as const;
+
+    const colorVariants = {
+      visible: {
+        opacity: 1,
+        transition: { duration, ease, delay: delayColorIn },
+      },
+      hidden: { opacity: 0, transition: { duration, ease, delay: 0 } },
+    } as const;
 
     return (
       <div
@@ -252,10 +289,11 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       >
         {/* WHITE */}
         <motion.div
-          className="absolute inset-0 will-change-[opacity] pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={layerStyle}
           initial={false}
-          animate={{ opacity: showWhite ? 1 : 0 }}
-          transition={{ duration, ease }}
+          variants={whiteVariants}
+          animate={showWhite ? "visible" : "hidden"}
         >
           <Image
             src={"/logo/logo-no-text-white.svg"}
@@ -269,10 +307,11 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
 
         {/* COLOR */}
         <motion.div
-          className="absolute inset-0 will-change-[opacity] pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={layerStyle}
           initial={false}
-          animate={{ opacity: showWhite ? 0 : 1 }}
-          transition={{ duration, ease }}
+          variants={colorVariants}
+          animate={showWhite ? "hidden" : "visible"}
         >
           <Image
             src={"/logo/logo-no-text.svg"}
@@ -285,7 +324,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         </motion.div>
       </div>
     );
-  }
+  };
 
   return (
     <div
@@ -300,19 +339,19 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         initial="step1"
         animate={`step${step}`}
         transition={{ layout: { duration: 0 } }}
-        style={{ transformOrigin: "50% 50%" }}
+        style={{ transformOrigin: "50% 50%", borderRadius: "var(--r)" }}
         className={cn(
-          "absolute flex items-center drop-shadow-xl border z-10 min-h-fit justify-center overflow-hidden transform-gpu will-change-transform",
+          // เพิ่ม transition-colors ให้พื้นหลังเปลี่ยนเนียน ไม่กระตุกไปชนกับ crossfade
+          "absolute flex items-center drop-shadow-xl border z-10 min-h-fit justify-center overflow-hidden will-change-transform transition-colors duration-300",
           step < 3 ? "bg-primary" : "bg-white",
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
       >
-        {/* Logo: crossfade ultra smooth */}
-        <motion.div className={step < 6 ? "m-6" : "m-0"}>
-          <CrossfadeLogo showWhite={step < 3} />
-        </motion.div>
+        {/* ห่อโลโก้ด้วย div ที่ "ไม่มี transform" ลดโอกาส glitch บน iOS */}
+        <div className={step < 6 ? "m-6" : "m-0"}>
+          <CrossfadeLogo showWhite={showWhiteLogo} />
+        </div>
 
-        {/* Content (แสดงตอน step6 เท่านั้น) */}
         {step >= 6 && (
           <motion.div
             key="LoginGroup"
@@ -321,7 +360,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
             animate="show"
             className="flex flex-col items-center text-center w-full h-full"
           >
-            {/* ถ้ามี heading/desc เพิ่มได้ โดยใส่ variants=itemVariants เพื่อได้ stagger */}
             <motion.div variants={itemVariants}>
               <LoginForm form={form} onSubmit={onSubmit} hideForm={false} />
             </motion.div>
@@ -343,7 +381,6 @@ export default function LandingAnimation() {
     if (ready) setStep(1);
   }, [ready]);
 
-
   const DEFAULT_TRANSITION_DURATION = isMobile ? 500 : 600;
 
   const desktopSequence = [
@@ -355,29 +392,12 @@ export default function LandingAnimation() {
 
   const mobileSequence = [
     { action: () => setStep(2), delay: 0 },
-    { action: () => setStep(3)},
+    { action: () => setStep(3) },
     { action: () => setStep(4) },
     { action: () => setStep(6) },
   ];
 
-  // const desktopReverseSequence = [
-  //   { action: () => setStep(4) },
-  //   { action: () => setStep(3) },
-  //   { action: () => setStep(2) },
-  //   { action: () => setStep(1) },
-  // ];
-
-  // const mobileReverseSequence = [
-  //   { action: () => setStep(4) },
-  //   { action: () => setStep(3) },
-  //   { action: () => setStep(2) },
-  //   { action: () => setStep(1), delay: 0 },
-  // ];
-
   const sequence = isMobile ? mobileSequence : desktopSequence;
-  // const reverseSequence = isMobile
-  //   ? mobileReverseSequence
-  //   : desktopReverseSequence;
 
   useEffect(() => {
     let prevTime = 0;
@@ -397,12 +417,6 @@ export default function LandingAnimation() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    // let prevTime = 0;
-    // reverseSequence.forEach(({ action }) => {
-    //   const delayDuration = prevTime + (DEFAULT_TRANSITION_DURATION);
-    //   prevTime = delayDuration;
-    //   setTimeout(action, delayDuration);
-    // });
   }
 
   return (
@@ -413,22 +427,7 @@ export default function LandingAnimation() {
         <DesktopLanding step={step} form={form} onSubmit={onSubmit} />
       )}
       {/* DEV-NOTE: Open this for debugging each step */}
-      {/* <div className="absolute bottom-5 right-5 flex gap-2 z-50 bg-black/50 p-2">
-        <button
-          onClick={prevStep}
-          className="bg-white text-black px-4 py-2 rounded-lg disabled:bg-white/20"
-          disabled={step === 1}
-        >
-          Prev
-        </button>
-        <span className="text-white text-2xl text-bold">{step}</span>
-        <button
-          onClick={nextStep}
-          className="bg-white text-black px-4 py-2 rounded-lg disabled:bg-white/20"
-        >
-          Next
-        </button>
-      </div> */}
+      {/* <div className="absolute bottom-5 right-5 flex gap-2 z-50 bg-black/50 p-2"> <button onClick={prevStep} className="bg-white text-black px-4 py-2 rounded-lg disabled:bg-white/20" disabled={step === 1} > Prev </button> <span className="text-white text-2xl text-bold">{step}</span> <button onClick={nextStep} className="bg-white text-black px-4 py-2 rounded-lg disabled:bg-white/20" > Next </button> </div> */}
     </>
   );
-} 
+}
