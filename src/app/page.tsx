@@ -189,6 +189,8 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 
 /* ========================= Mobile ========================= */
 
+/* ========================= Mobile ========================= */
+
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
   const containerVariants = {
     step1: { width: "100%", height: "100%", scale: 2, borderRadius: "0" },
@@ -205,13 +207,13 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       width: "90%",
       height: "auto",
       scale: 1,
-       y: [-12, -4, 0] as number[],
+      y: [-12, -4, 0] as number[],
       borderRadius: "16px",
       transition: { duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
     },
   } as const;
 
-  // Content group & item (แสดงเฉพาะตอนเข้า step6)
+  // กลุ่มคอนเทนต์ (โชว์เฉพาะ step6)
   const groupVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -233,11 +235,57 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     },
   } as const;
 
-  const logoVariants = {
-    initial: { opacity: 0, scale: 1 },
-    animate: { opacity: 1, scale: 1, transition: { duration: 0.1 } },
-    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.1 } },
-  } as const;
+  // === Crossfade Icon: ไอคอน1 (white) ↔ ไอคอน2 (color) ===
+  // - initial={false} กันวาบตอน mount
+  // - absolute ซ้อนตำแหน่งเดียวกัน, will-change เพื่อ perf
+  // - pointer-events: none, aria-hidden เพื่อลด interactivity ไม่จำเป็น
+  function CrossfadeLogo({ showWhite }: { showWhite: boolean }) {
+    const duration = 0.35;
+    const ease = cubicBezier(0.42, 0, 0.58, 1);
+    const size = 44;
+
+    return (
+      <div
+        className="relative"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        {/* WHITE */}
+        <motion.div
+          className="absolute inset-0 will-change-[opacity] pointer-events-none"
+          initial={false}
+          animate={{ opacity: showWhite ? 1 : 0 }}
+          transition={{ duration, ease }}
+        >
+          <Image
+            src={"/logo/logo-no-text-white.svg"}
+            width={size}
+            height={size}
+            alt="White Logo"
+            draggable={false}
+            priority
+          />
+        </motion.div>
+
+        {/* COLOR */}
+        <motion.div
+          className="absolute inset-0 will-change-[opacity] pointer-events-none"
+          initial={false}
+          animate={{ opacity: showWhite ? 0 : 1 }}
+          transition={{ duration, ease }}
+        >
+          <Image
+            src={"/logo/logo-no-text.svg"}
+            width={size}
+            height={size}
+            alt="Color Logo"
+            draggable={false}
+            priority
+          />
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -259,44 +307,9 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
       >
-        {/* Logo */}
+        {/* Logo: crossfade ultra smooth */}
         <motion.div className={step < 6 ? "m-6" : "m-0"}>
-          <AnimatePresence mode="wait">
-            {step < 3 ? (
-              <motion.div
-                key="white-logo"
-                variants={logoVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-              >
-                <Image
-                  src={"/logo/logo-no-text-white.svg"}
-                  width={44}
-                  height={44}
-                  alt="White Logo"
-
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="color-logo"
-                variants={logoVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-
-              >
-                <Image
-                  src={"/logo/logo-no-text.svg"}
-                  width={44}
-                  height={44}
-                  alt="Color Logo"
-
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <CrossfadeLogo showWhite={step < 3} />
         </motion.div>
 
         {/* Content (แสดงตอน step6 เท่านั้น) */}
@@ -308,12 +321,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
             animate="show"
             className="flex flex-col items-center text-center w-full h-full"
           >
-            {/* ถ้ามีหัวข้อ/คำอธิบาย ใส่เป็น item แยกเพื่อได้ stagger ที่เนียน */}
-            {/* <motion.h2 variants={itemVariants} className="text-lg font-semibold">เริ่มต้นใช้งาน</motion.h2>
-            <motion.p variants={itemVariants} className="text-sm text-muted-foreground">
-              ให้คุณจัดการทุกการสนทนาจาก LINE, Facebook, Instagram, WhatsApp ในแอปเดียว
-            </motion.p> */}
-
+            {/* ถ้ามี heading/desc เพิ่มได้ โดยใส่ variants=itemVariants เพื่อได้ stagger */}
             <motion.div variants={itemVariants}>
               <LoginForm form={form} onSubmit={onSubmit} hideForm={false} />
             </motion.div>
