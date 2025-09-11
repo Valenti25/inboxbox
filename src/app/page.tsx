@@ -118,11 +118,11 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
             exit="exit"
             transition={{ duration: 0.6, stiffness: 75 }}
             className={cn(
-              "absolute flex items-center bg-primary-foreground drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
+              "absolute flex items-center bg-[#F24822] drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
               step >= 2,
               step >= 3 && "justify-start p-8",
               step >= 4 &&
-                "flex-col items-start min-w-lg max-h-[685px] min-h-[600px]",
+                "flex-col items-start min-w-lg max-h-[685px] min-h-[600px] ",
               step == 6 && "static",
             )}
           >
@@ -190,13 +190,6 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 /* ========================= Mobile ========================= */
 
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
-  /**
-   * รวม step5 เข้ากับ step6:
-   * - step4: เตรียมท่า (anticipation) ยกขึ้นนิดนึง
-   * - step6: เลื่อน container ลงอย่างนุ่ม + เฟด content ทีละชิ้น
-   */
-
-  // Container (ไม่มี step5 แล้ว)
   const containerVariants = {
     step1: { width: "100%", height: "100%", scale: 2, borderRadius: "0" },
     step2: { width: "auto", height: "auto", scale: 1, borderRadius: "16px" },
@@ -207,7 +200,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       scale: 1,
       y: -12,
       borderRadius: "16px",
-    }, // raise a bit
+    },
     step6: {
       width: "90%",
       height: "auto",
@@ -345,7 +338,6 @@ export default function LandingAnimation() {
 
   const DEFAULT_TRANSITION_DURATION = isMobile ? 500 : 600;
 
-  // Desktop เดิม: ไปจนถึง 6 เพื่อให้คอนเทนต์โชว์
   const desktopSequence = [
     { action: () => setStep(2), delay: 0 },
     { action: () => setStep(3) },
@@ -353,7 +345,6 @@ export default function LandingAnimation() {
     { action: () => setStep(6) },
   ];
 
-  // ✅ Mobile: ตัด step5 ออก ไป 2 → 3 → 4 → 6
   const mobileSequence = [
     { action: () => setStep(2), delay: 0 },
     { action: () => setStep(3)},
@@ -361,24 +352,24 @@ export default function LandingAnimation() {
     { action: () => setStep(6) },
   ];
 
-  const desktopReverseSequence = [
-    { action: () => setStep(4), delay: 0 },
-    { action: () => setStep(3), delay: 1000 },
-    { action: () => setStep(2) },
-    { action: () => setStep(1), delay: 0 },
-  ];
+  // const desktopReverseSequence = [
+  //   { action: () => setStep(4) },
+  //   { action: () => setStep(3) },
+  //   { action: () => setStep(2) },
+  //   { action: () => setStep(1) },
+  // ];
 
-  const mobileReverseSequence = [
-    { action: () => setStep(4) },
-    { action: () => setStep(3) },
-    { action: () => setStep(2) },
-    { action: () => setStep(1), delay: 0 },
-  ];
+  // const mobileReverseSequence = [
+  //   { action: () => setStep(4) },
+  //   { action: () => setStep(3) },
+  //   { action: () => setStep(2) },
+  //   { action: () => setStep(1), delay: 0 },
+  // ];
 
   const sequence = isMobile ? mobileSequence : desktopSequence;
-  const reverseSequence = isMobile
-    ? mobileReverseSequence
-    : desktopReverseSequence;
+  // const reverseSequence = isMobile
+  //   ? mobileReverseSequence
+  //   : desktopReverseSequence;
 
   useEffect(() => {
     let prevTime = 0;
@@ -398,12 +389,12 @@ export default function LandingAnimation() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    let prevTime = 0;
-    reverseSequence.forEach(({ action, delay }) => {
-      const delayDuration = prevTime + (delay || DEFAULT_TRANSITION_DURATION);
-      prevTime = delayDuration;
-      setTimeout(action, delayDuration);
-    });
+    // let prevTime = 0;
+    // reverseSequence.forEach(({ action }) => {
+    //   const delayDuration = prevTime + (DEFAULT_TRANSITION_DURATION);
+    //   prevTime = delayDuration;
+    //   setTimeout(action, delayDuration);
+    // });
   }
 
   return (
