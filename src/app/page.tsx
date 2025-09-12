@@ -174,6 +174,10 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 /* ========================= Mobile ========================= */
 
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
+  // ---- ค่าคงที่ ----
+  const BR = 16;                 // รัศมีมุม (px) เดียวกันทุก step หลัง 2
+  const BG_IN_DELAY = 180;       // ดีเลย์ก่อนสลับพื้นหลังเป็นขาว (ms) เพื่อให้มุม “ล็อก” ก่อน
+
   // 1) จังหวะ scale/position ของกล่อง (ยังใช้ motion จัด layout)
   const containerVariants = {
     step1: {
@@ -187,14 +191,14 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       width: "auto",
       height: "auto",
       scale: 1,
-      borderRadius: "16px",
+      borderRadius: `${BR}px`,
       transition: { delay: 0.18, duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
     },
     step3: {
       width: "auto",
       height: "auto",
       scale: 1,
-      borderRadius: "16px",
+      borderRadius: `${BR}px`,
       transition: { delay: 0.22, duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
     },
     step4: {
@@ -202,7 +206,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       height: "auto",
       scale: 1,
       y: -12,
-      borderRadius: "16px",
+      borderRadius: `${BR}px`,
       transition: { delay: 0.18, duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
     },
     step6: {
@@ -210,7 +214,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       height: "auto",
       scale: 1,
       y: [-12, -4, 0] as number[],
-      borderRadius: "16px",
+      borderRadius: `${BR}px`,
       transition: {
         delay: 0.12,
         duration: 0.55,
@@ -240,73 +244,80 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     },
   } as const;
 
-  /** ---------- FIX FLICKER + CSS EASE BG ---------- */
-  // แยกเฟส “พื้นหลังส้ม/พื้นหลังขาว” แล้วหน่วง crossfade โลโก้เพื่อกันกระพริบ
-  const [showWhiteLogo, setShowWhiteLogo] = useState(true);
+  /** ---------- พื้นหลังแบบ “ล็อกมุมก่อน ค่อยเปลี่ยนสี” ---------- */
+  // เราแยก phase สี (orange/white) ออกจาก step แล้วหน่วงตอนเข้า white
+  const [bgPhase, setBgPhase] = useState<"orange" | "white">("orange");
   const phaseRef = useRef<"orange" | "white">("orange");
-  const timerRef = useRef<number | null>(null);
+  const delayRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const nextPhase: "orange" | "white" = step < 3 ? "orange" : "white";
-    if (phaseRef.current === nextPhase) return;
+    const want: "orange" | "white" = step < 3 ? "orange" : "white";
+    if (phaseRef.current === want) return;
+    phaseRef.current = want;
 
-    phaseRef.current = nextPhase;
-
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+    if (delayRef.current) {
+      clearTimeout(delayRef.current);
+      delayRef.current = null;
     }
 
-    if (nextPhase === "orange") {
-      // กลับส้ม → ใช้โลโก้ขาวทันที
-      setShowWhiteLogo(true);
+    if (want === "white") {
+      // ล็อก borderRadius ด้วย motion ให้เข้าที่ก่อน แล้วค่อยเปลี่ยนสีพื้นหลังตามหลังเล็กน้อย
+      delayRef.current = window.setTimeout(() => setBgPhase("white"), BG_IN_DELAY);
     } else {
-      // เข้าขาว → ให้พื้นหลังเปลี่ยนก่อน แล้วค่อยเฟดโลโก้สีตาม
-      setShowWhiteLogo(true);
-      timerRef.current = window.setTimeout(() => setShowWhiteLogo(false), 200); // 200ms
+      // กลับส้มให้ทันที (ไม่มีปัญหา)
+      setBgPhase("orange");
     }
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
+      if (delayRef.current) {
+        clearTimeout(delayRef.current);
+        delayRef.current = null;
       }
     };
   }, [step]);
-  /** -------------------------------- */
+
+  /** ---------- FIX FLICKER โลโก้: crossfade sync กับ bg ---------- */
+  const [showWhiteLogo, setShowWhiteLogo] = useState(true);
+  const logoTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (logoTimer.current) {
+      clearTimeout(logoTimer.current);
+      logoTimer.current = null;
+    }
+    if (phaseRef.current === "white") {
+      // ให้โลโก้สีขึ้นหลังพื้นหลังเปลี่ยน
+      setShowWhiteLogo(true);
+      logoTimer.current = window.setTimeout(() => setShowWhiteLogo(false), BG_IN_DELAY);
+    } else {
+      // โทนส้มใช้โลโก้ขาวทันที
+      setShowWhiteLogo(true);
+    }
+    return () => {
+      if (logoTimer.current) {
+        clearTimeout(logoTimer.current);
+        logoTimer.current = null;
+      }
+    };
+  }, [bgPhase]); // เปลี่ยนตามเฟสจริงของ bg
 
   // โลโก้ crossfade ที่ sync กับพื้นหลัง
   const CrossfadeLogo = ({ showWhite }: { showWhite: boolean }) => {
-    const duration = 0.35; // 350ms
-    const delayColorIn = 0.2; // 200ms (ตามหลังพื้นหลัง)
+    const duration = 0.35;
     const size = 44;
-
     const layerStyle: React.CSSProperties = {
       WebkitBackfaceVisibility: "hidden",
       backfaceVisibility: "hidden",
       willChange: "opacity",
       transform: "translateZ(0)",
     };
-
-    const whiteVariants = {
-      visible: { opacity: 1, transition: { duration } },
-      hidden: { opacity: 0, transition: { duration } },
-    } as const;
-
-    const colorVariants = {
-      visible: { opacity: 1, transition: { duration, delay: delayColorIn } },
-      hidden: { opacity: 0, transition: { duration } },
-    } as const;
-
     return (
       <div className="relative" style={{ width: size, height: size }} aria-hidden="true">
-        {/* WHITE */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={layerStyle}
           initial={false}
-          variants={whiteVariants}
-          animate={showWhite ? "visible" : "hidden"}
+          animate={{ opacity: showWhite ? 1 : 0 }}
+          transition={{ duration }}
         >
           <Image
             src={"/logo/logo-no-text-white.svg"}
@@ -317,14 +328,12 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
             draggable={false}
           />
         </motion.div>
-
-        {/* COLOR */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={layerStyle}
           initial={false}
-          variants={colorVariants}
-          animate={showWhite ? "hidden" : "visible"}
+          animate={{ opacity: showWhite ? 0 : 1 }}
+          transition={{ duration }}
         >
           <Image
             src={"/logo/logo-no-text.svg"}
@@ -348,21 +357,39 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         initial="step1"
         animate={`step${step}` as keyof typeof containerVariants}
         transition={{ layout: { duration: 0 } }}
+        // ใช้ CSS var สำหรับรัศมี (ทั้ง wrapper และ bgLayer อ่านค่าจากตัวเดียวกัน)
         style={{
+          // ล็อก origin เพื่อกัน scale กระชาก
           transformOrigin: "50% 50%",
-          // คุมเฉพาะสี/ขอบมน/เงาด้วย CSS transition (ease-in-out)
+          // ให้ transition เฉพาะสี/เงา/ขอบมนด้วย CSS (แต่ borderRadius จริงถูก sync ด้วย motion แล้ว)
           transitionProperty: "background-color, border-radius, box-shadow",
           transitionDuration: "500ms",
           transitionTimingFunction: "ease-in-out",
+          // เผื่ออยากปรับรัศมีทีเดียว
+          ["--mbr" as any]: step >= 2 ? `${BR}px` : "0px",
+          borderRadius: "var(--mbr)",
         }}
         className={cn(
           "absolute flex items-center drop-shadow-xl border z-10 min-h-fit justify-center overflow-hidden",
-          step < 3 ? "bg-primary" : "bg-white",
+          // ตัว wrapper ไม่มีสีพื้น (กันเฟรมชนกัน) สีไปอยู่ที่ bgLayer
+          "bg-transparent",
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
       >
+        {/* ชั้นพื้นหลังจริง แยกเป็น layer เพื่อดีเลย์เปลี่ยนสี แต่ใช้มุมเดียวกับ wrapper เสมอ */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            borderRadius: "var(--mbr)",
+            // ดีเลย์แค่ตอนเข้า white -> คุมด้วย state bgPhase ด้านบน
+            backgroundColor: bgPhase === "white" ? "#ffffff" : "var(--color-primary, #F24822)",
+            transition: `background-color 500ms ease-in-out, border-radius 500ms ease-in-out, box-shadow 500ms ease-in-out`,
+          }}
+        />
+
         {/* โลโก้ – ไม่มี transform ที่ layer รูป ลด glitch */}
-        <div className={step < 6 ? "m-6" : "m-0"}>
+        <div className={step < 6 ? "m-6" : "m-0"} style={{ position: "relative", zIndex: 1 }}>
           <CrossfadeLogo showWhite={showWhiteLogo} />
         </div>
 
@@ -373,6 +400,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
             initial="hidden"
             animate="show"
             className="flex flex-col items-center text-center w-full h-full"
+            style={{ position: "relative", zIndex: 1 }}
           >
             <motion.div variants={itemVariants}>
               <LoginForm form={form} onSubmit={onSubmit} hideForm={false} />
