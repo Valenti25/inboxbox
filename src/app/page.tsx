@@ -179,32 +179,42 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 /* ========================= Mobile ========================= */
 
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
-  // ---- ค่าคงที่ ----
-  const BR = 16;                 // รัศมีมุม (px) เดียวกันทุก step หลัง 2
-  const BG_IN_DELAY = 180;       // ดีเลย์ก่อนสลับพื้นหลังเป็นขาว (ms) เพื่อให้มุม “ล็อก” ก่อน
+  const BR = 16; // มุมคงที่ทุกเฟรม
 
-  // 1) จังหวะ scale/position ของกล่อง (ยังใช้ motion จัด layout)
+  // ✨ คุมค่าความเร็วไว้ที่นี่
+  const MOBILE_ANIM = {
+    container: 0.8,   // เดิม ~0.55
+    fade: 0.7,        // เดิม ~0.5
+    stagger: 0.12,    // เดิม 0.08
+    delay2: 0.22,     // step2 delay เดิม 0.18
+    delay3: 0.26,     // step3 delay เดิม 0.22
+    delay4: 0.22,     // step4 delay เดิม 0.18
+    delay6: 0.16,     // step6 delay เดิม 0.12
+  };
+
+  const ease = cubicBezier(0.2, 0.8, 0.2, 1);
+
   const containerVariants = {
     step1: {
       width: "100%",
       height: "100%",
       scale: 2,
-      borderRadius: "0",
-      transition: { duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
+      borderRadius: `${BR}px`,
+      transition: { duration: MOBILE_ANIM.container, ease },
     },
     step2: {
       width: "auto",
       height: "auto",
       scale: 1,
       borderRadius: `${BR}px`,
-      transition: { delay: 0.18, duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
+      transition: { delay: MOBILE_ANIM.delay2, duration: MOBILE_ANIM.container, ease },
     },
     step3: {
       width: "auto",
       height: "auto",
       scale: 1,
       borderRadius: `${BR}px`,
-      transition: { delay: 0.22, duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
+      transition: { delay: MOBILE_ANIM.delay3, duration: MOBILE_ANIM.container, ease },
     },
     step4: {
       width: "90%",
@@ -212,7 +222,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       scale: 1,
       y: -12,
       borderRadius: `${BR}px`,
-      transition: { delay: 0.18, duration: 0.55, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
+      transition: { delay: MOBILE_ANIM.delay4, duration: MOBILE_ANIM.container, ease },
     },
     step6: {
       width: "90%",
@@ -220,11 +230,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       scale: 1,
       y: [-12, -4, 0] as number[],
       borderRadius: `${BR}px`,
-      transition: {
-        delay: 0.12,
-        duration: 0.55,
-        ease: cubicBezier(0.2, 0.8, 0.2, 1),
-      },
+      transition: { delay: MOBILE_ANIM.delay6, duration: MOBILE_ANIM.container, ease },
     },
   } as const;
 
@@ -232,11 +238,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        delay: 0.22,
-        staggerChildren: 0.08,
-      },
+      transition: { when: "beforeChildren", delay: 0.24, staggerChildren: MOBILE_ANIM.stagger },
     },
   } as const;
 
@@ -245,118 +247,24 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.48, ease: cubicBezier(0.2, 0.8, 0.2, 1) },
+      transition: { duration: 0.56, ease }, // ช้าลงนิดให้เข้าจังหวะกล่อง
     },
   } as const;
 
-  /** ---------- พื้นหลังแบบ “ล็อกมุมก่อน ค่อยเปลี่ยนสี” ---------- */
-  const [bgPhase, setBgPhase] = useState<"orange" | "white">("orange");
-  const phaseRef = useRef<"orange" | "white">("orange");
-  const delayRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const want: "orange" | "white" = step < 3 ? "orange" : "white";
-    if (phaseRef.current === want) return;
-    phaseRef.current = want;
-
-    if (delayRef.current) {
-      clearTimeout(delayRef.current);
-      delayRef.current = null;
-    }
-
-    if (want === "white") {
-      delayRef.current = window.setTimeout(() => setBgPhase("white"), BG_IN_DELAY);
-    } else {
-      setBgPhase("orange");
-    }
-
-    return () => {
-      if (delayRef.current) {
-        clearTimeout(delayRef.current);
-        delayRef.current = null;
-      }
-    };
-  }, [step]);
-
-  /** ---------- FIX FLICKER โลโก้: crossfade sync กับ bg ---------- */
-  const [showWhiteLogo, setShowWhiteLogo] = useState(true);
-  const logoTimer = useRef<number | null>(null);
-  useEffect(() => {
-    if (logoTimer.current) {
-      clearTimeout(logoTimer.current);
-      logoTimer.current = null;
-    }
-    if (phaseRef.current === "white") {
-      setShowWhiteLogo(true);
-      logoTimer.current = window.setTimeout(() => setShowWhiteLogo(false), BG_IN_DELAY);
-    } else {
-      setShowWhiteLogo(true);
-    }
-    return () => {
-      if (logoTimer.current) {
-        clearTimeout(logoTimer.current);
-        logoTimer.current = null;
-      }
-    };
-  }, [bgPhase]);
-
-  // โลโก้ crossfade ที่ sync กับพื้นหลัง
-  const CrossfadeLogo = ({ showWhite }: { showWhite: boolean }) => {
-    const duration = 0.35;
-    const size = 44;
-    const layerStyle: React.CSSProperties = {
-      WebkitBackfaceVisibility: "hidden",
-      backfaceVisibility: "hidden",
-      willChange: "opacity",
-      transform: "translateZ(0)",
-    };
-    return (
-      <div className="relative" style={{ width: size, height: size }} aria-hidden="true">
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={layerStyle}
-          initial={false}
-          animate={{ opacity: showWhite ? 1 : 0 }}
-          transition={{ duration }}
-        >
-          <Image
-            src={"/logo/logo-no-text-white.svg"}
-            width={size}
-            height={size}
-            alt="White Logo"
-            priority
-            draggable={false}
-          />
-        </motion.div>
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={layerStyle}
-          initial={false}
-          animate={{ opacity: showWhite ? 0 : 1 }}
-          transition={{ duration }}
-        >
-          <Image
-            src={"/logo/logo-no-text.svg"}
-            width={size}
-            height={size}
-            alt="Color Logo"
-            priority
-            draggable={false}
-          />
-        </motion.div>
-      </div>
-    );
-  };
-
-  // ------ style ของ wrapper ที่มี CSS var "--mbr" แบบ typed ------
   const wrapperStyle: StyleWithMbr = {
     transformOrigin: "50% 50%",
     transitionProperty: "background-color, border-radius, box-shadow",
-    transitionDuration: "500ms",
+    transitionDuration: `${MOBILE_ANIM.container * 1000}ms`, // sync กับ container
     transitionTimingFunction: "ease-in-out",
-    "--mbr": step >= 2 ? `${BR}px` : "0px",
+    "--mbr": `${BR}px`,
     borderRadius: "var(--mbr)",
   };
+
+  const isOrange = step < 3;
+  const bgTransition = { duration: MOBILE_ANIM.fade, ease }; // ✨ crossfade ช้าลง
+
+  // ... (ที่เหลือเหมือนเดิม)
+
 
   return (
     <div className={cn("relative w-screen h-screen overflow-hidden flex items-center justify-center gap-6")}>
@@ -374,20 +282,56 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
       >
-        {/* ชั้นพื้นหลังจริง แยกเป็น layer เพื่อดีเลย์เปลี่ยนสี แต่ใช้มุมเดียวกับ wrapper เสมอ */}
-        <div
+        {/* พื้นหลังสองชั้น ใช้ borderRadius: inherit ให้ทรงเท่ากันเป๊ะ */}
+        <motion.div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
           style={{
-            borderRadius: "var(--mbr)",
-            backgroundColor: bgPhase === "white" ? "#ffffff" : "var(--color-primary, #F24822)",
-            transition: `background-color 500ms ease-in-out, border-radius 500ms ease-in-out, box-shadow 500ms ease-in-out`,
+            borderRadius: "inherit",
+            backgroundColor: "var(--color-primary, #F24822)",
+            willChange: "opacity",
+            transform: "translateZ(0)",
           }}
+          initial={false}
+          animate={{ opacity: isOrange ? 1 : 0 }}
+          transition={bgTransition}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            borderRadius: "inherit",
+            backgroundColor: "#ffffff",
+            willChange: "opacity",
+            transform: "translateZ(0)",
+          }}
+          initial={false}
+          animate={{ opacity: isOrange ? 0 : 1 }}
+          transition={bgTransition}
         />
 
-        {/* โลโก้ */}
+        {/* โลโก้ crossfade ให้เข้ากับพื้นหลัง */}
         <div className={step < 6 ? "m-6" : "m-0"} style={{ position: "relative", zIndex: 1 }}>
-          <CrossfadeLogo showWhite={showWhiteLogo} />
+          <div className="relative" style={{ width: 44, height: 44 }}>
+            <motion.div
+              className="absolute inset-0"
+              style={{ borderRadius: "inherit", willChange: "opacity", transform: "translateZ(0)" }}
+              initial={false}
+              animate={{ opacity: isOrange ? 1 : 0 }}
+              transition={bgTransition}
+            >
+              <Image src={"/logo/logo-no-text-white.svg"} width={44} height={44} alt="White Logo" priority draggable={false} />
+            </motion.div>
+            <motion.div
+              className="absolute inset-0"
+              style={{ borderRadius: "inherit", willChange: "opacity", transform: "translateZ(0)" }}
+              initial={false}
+              animate={{ opacity: isOrange ? 0 : 1 }}
+              transition={bgTransition}
+            >
+              <Image src={"/logo/logo-no-text.svg"} width={44} height={44} alt="Color Logo" priority draggable={false} />
+            </motion.div>
+          </div>
         </div>
 
         {step >= 6 && (
