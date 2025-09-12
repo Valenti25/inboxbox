@@ -47,17 +47,34 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
   const [loadingFacebook, setLoadingFacebook] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ปุ่ม "เข้าสู่ระบบ" หลัก
   const handleSubmitEmail = async (values: FormValues) => {
     setLoadingEmail(true);
-    await new Promise((r) => setTimeout(r, 500)); // mock
+    await new Promise((r) => setTimeout(r, 500)); // mock API
     setLoadingEmail(false);
     onSubmit(values);
   };
 
-  const oauth = async (setLoading: (b: boolean) => void) => {
+  // ปุ่มไอคอนสังคม: แสดงโหลดบนปุ่มตัวเอง + วิ่ง validation แบบเดียวกับ submit
+  const socialLogin = async (setLoading: (b: boolean) => void) => {
     try {
       setLoading(true);
+
+      // ตรวจฟิลด์และโฟกัสให้ ถ้าไม่ผ่านจะไม่ไปต่อ
+      const isValid = await form.trigger(["email", "password"], {
+        shouldFocus: true,
+      });
+      if (!isValid) return;
+
+      const values = form.getValues();
+
+      // ตรงนี้คือจุดที่จะต่อ OAuth จริง ๆ (ตอนนี้ mock)
       await new Promise((r) => setTimeout(r, 500));
+
+      // ส่งค่าให้ onSubmit เหมือนปุ่มหลัก (ถ้าต้องการ)
+      onSubmit(values);
+
+      // ถ้าเป็น OAuth จริง: redirect หรือ signIn("google") ตรงนี้แทนได้
     } finally {
       setLoading(false);
     }
@@ -71,9 +88,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
 
   return (
     <div className="font-thai">
-      {/* การ์ดกลางหน้าจอให้ฟอร์มกว้างประมาณภาพ */}
       <div className="mx-auto max-w-[720px]">
-        {/* กลุ่มหัวข้อซ้ายบนตามภาพ */}
         <div className="px-6 ">
           <h1 className="text-xl mb-1 lg:text-2xl lg:mb-2 font-semibold text-[#111827]">
             เริ่มต้นใช้งาน
@@ -85,7 +100,6 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
           </p>
         </div>
 
-        {/* ฟอร์ม */}
         <AnimatePresence>
           {!hideForm && (
             <motion.div
@@ -102,7 +116,9 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                 >
                   {/* Email */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs lg:text-sm font-medium text-[#27272A]">อีเมล</Label>
+                    <Label className="text-xs lg:text-sm font-medium text-[#27272A]">
+                      อีเมล
+                    </Label>
                     <FormField
                       control={form.control}
                       name="email"
@@ -134,7 +150,9 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
 
                   {/* Password */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs lg:text-sm font-medium text-[#27272A]">รหัสผ่าน</Label>
+                    <Label className="text-xs lg:text-sm font-medium text-[#27272A]">
+                      รหัสผ่าน
+                    </Label>
                     <FormField
                       control={form.control}
                       name="password"
@@ -159,12 +177,28 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                                   type="button"
                                   onClick={() => setShowPassword((s) => !s)}
                                   className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-7 rounded-md hover:bg-gray-100"
-                                  aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                                  aria-label={
+                                    showPassword
+                                      ? "ซ่อนรหัสผ่าน"
+                                      : "แสดงรหัสผ่าน"
+                                  }
                                 >
                                   {showPassword ? (
-                                    <Image src="/logo/open.svg" alt="Eye Off" width={20} height={20} />
+                                    <Image
+                                      src="/logo/open.svg"
+                                      alt="Eye On"
+                                      width={20}
+                                      height={20}
+                                      className="block"
+                                    />
                                   ) : (
-                                    <Image src="/logo/close.svg" alt="Eye Off" width={20} height={20} />
+                                    <Image
+                                      src="/logo/close.svg"
+                                      alt="Eye Off"
+                                      width={20}
+                                      height={20}
+                                      className="block"
+                                    />
                                   )}
                                 </button>
                               </div>
@@ -233,52 +267,82 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                     <Separator className="flex-1 bg-[#F24822]/10" />
                   </div>
 
-                  {/* Social (Google / LINE / Facebook) */}
+                  {/* Social (Google / LINE / Facebook) — คลิกแล้วโหลดบนปุ่มที่กดเอง + ตรวจ validation เดียวกัน */}
                   <div className="flex items-center justify-center gap-4">
                     <Button
                       type="button"
                       variant="secondary"
                       className="size-10 rounded-sm bg-white border hover:bg-gray-50 p-0"
-                      onClick={() => oauth(setLoadingGoogle)}
+                      onClick={() => socialLogin(setLoadingGoogle)}
                       isLoading={loadingGoogle}
+                      aria-label="เข้าสู่ระบบด้วย Google"
                     >
-                      <Image src="/logo/google.svg" alt="Google" width={22} height={22} />
+                      <Image
+                        src="/logo/google.svg"
+                        alt="Google"
+                        width={22}
+                        height={22}
+                        className="block"
+                      />
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
                       className="size-10 rounded-sm bg-white border hover:bg-gray-50 p-0"
-                      onClick={() => oauth(setLoadingLine)}
+                      onClick={() => socialLogin(setLoadingLine)}
                       isLoading={loadingLine}
+                      aria-label="เข้าสู่ระบบด้วย LINE"
                     >
-                      <Image src="/logo/line.svg" alt="LINE" width={24} height={24} />
+                      <Image
+                        src="/logo/line.svg"
+                        alt="LINE"
+                        width={24}
+                        height={24}
+                        className="block"
+                      />
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
                       className="size-10 rounded-sm bg-white border hover:bg-gray-50 p-0"
-                      onClick={() => oauth(setLoadingFacebook)}
+                      onClick={() => socialLogin(setLoadingFacebook)}
                       isLoading={loadingFacebook}
+                      aria-label="เข้าสู่ระบบด้วย Facebook"
                     >
-                      <Image src="/logo/facebook.svg" alt="Facebook" width={22} height={22} />
+                      <Image
+                        src="/logo/facebook.svg"
+                        alt="Facebook"
+                        width={22}
+                        height={22}
+                        className="block"
+                      />
                     </Button>
                   </div>
 
-                  {/* ข้อความยอมรับเงื่อนไขตามภาพ */}
+                  {/* ข้อความยอมรับเงื่อนไข */}
                   <p className="text-center lg:text-sm text-xs leading-5 text-[#6B7280] pt-2">
-                    เมื่อตัดสินใจดำเนินการต่อ แสดงว่าคุณยอมรับ<br className="sm:hidden" />
-                    <button type="button" className="text-[#1B71F5] hover:underline">
+                    เมื่อตัดสินใจดำเนินการต่อ แสดงว่าคุณยอมรับ
+                    <br className="sm:hidden" />
+                    <button
+                      type="button"
+                      className="text-[#1B71F5] hover:underline"
+                    >
                       ข้อกำหนดการใช้งาน
                     </button>
                     และ
-                    <button type="button" className="text-[#1B71F5] hover:underline">
+                    <button
+                      type="button"
+                      className="text-[#1B71F5] hover:underline"
+                    >
                       นโยบายความเป็นส่วนตัว
                     </button>
                   </p>
 
                   {/* ยังไม่มีบัญชี? ลงทะเบียน */}
                   <div className="text-center lg:pt-1 lg:pb-6">
-                    <span className="text-xs lg:text-sm font-medium text-[#71717A]">ยังไม่มีบัญชี? </span>
+                    <span className="text-xs lg:text-sm font-medium text-[#71717A]">
+                      ยังไม่มีบัญชี?{" "}
+                    </span>
                     <button
                       type="button"
                       className="text-xs lg:text-sm text-[#F24822] font-medium hover:underline"
