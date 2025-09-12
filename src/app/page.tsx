@@ -120,11 +120,11 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
             exit="exit"
             transition={{ duration: 0.6, stiffness: 75 }}
             className={cn(
-              "absolute flex items-center bg-[#F24822]  drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
+              "absolute flex items-center bg-[#F24822]  drop-shadow-xl z-10 min-h-80 justify-center overflow-hidden",
               step >= 2,
               step >= 3 && "justify-start p-8",
               step >= 4 &&
-                "flex-col items-start min-w-lg max-h-[685px] min-h-[600px]",
+                "flex-col items-start min-w-lg max-h-[700px] min-h-[610px]",
               step === 6 && "static",
             )}
           >
@@ -421,7 +421,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
               willChange: "opacity, transform",
             }}
           >
-            <motion.div variants={itemVariants} className="mb-4 lg:mt-5">
+            <motion.div variants={itemVariants} className="mb-4 mt-5">
               <Image
                 src={"/logo/inblock.svg"}
                 width={FORM_LOGO_SIZE}

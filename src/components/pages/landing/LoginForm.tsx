@@ -90,7 +90,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
     <div className="font-thai">
       <div className="mx-auto max-w-[720px]">
         <div className="px-6 ">
-          <h1 className="text-xl mb-1 lg:text-2xl lg:mb-2 font-semibold text-[#111827]">
+          <h1 className="text-xl mb-1 lg:text-2xl lg:mb-2 lg:mt-6 font-semibold text-[#111827]">
             เริ่มต้นใช้งาน
           </h1>
           <p className="text-sm text-[#736862]">
