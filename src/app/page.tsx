@@ -13,6 +13,11 @@ import LoginForm, {
   FormValues as LoginFormValues,
 } from "@/components/pages/landing/LoginForm";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type React from "react";
+
+/* ===== Type helpers: CSS Vars (แก้ปัญหา no-explicit-any) ===== */
+type CSSVars<T extends string> = React.CSSProperties & Record<T, string | number>;
+type StyleWithMbr = CSSVars<"--mbr">;
 
 interface ComponentProps {
   step: number;
@@ -245,7 +250,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
   } as const;
 
   /** ---------- พื้นหลังแบบ “ล็อกมุมก่อน ค่อยเปลี่ยนสี” ---------- */
-  // เราแยก phase สี (orange/white) ออกจาก step แล้วหน่วงตอนเข้า white
   const [bgPhase, setBgPhase] = useState<"orange" | "white">("orange");
   const phaseRef = useRef<"orange" | "white">("orange");
   const delayRef = useRef<number | null>(null);
@@ -261,10 +265,8 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     }
 
     if (want === "white") {
-      // ล็อก borderRadius ด้วย motion ให้เข้าที่ก่อน แล้วค่อยเปลี่ยนสีพื้นหลังตามหลังเล็กน้อย
       delayRef.current = window.setTimeout(() => setBgPhase("white"), BG_IN_DELAY);
     } else {
-      // กลับส้มให้ทันที (ไม่มีปัญหา)
       setBgPhase("orange");
     }
 
@@ -285,11 +287,9 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       logoTimer.current = null;
     }
     if (phaseRef.current === "white") {
-      // ให้โลโก้สีขึ้นหลังพื้นหลังเปลี่ยน
       setShowWhiteLogo(true);
       logoTimer.current = window.setTimeout(() => setShowWhiteLogo(false), BG_IN_DELAY);
     } else {
-      // โทนส้มใช้โลโก้ขาวทันที
       setShowWhiteLogo(true);
     }
     return () => {
@@ -298,7 +298,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         logoTimer.current = null;
       }
     };
-  }, [bgPhase]); // เปลี่ยนตามเฟสจริงของ bg
+  }, [bgPhase]);
 
   // โลโก้ crossfade ที่ sync กับพื้นหลัง
   const CrossfadeLogo = ({ showWhite }: { showWhite: boolean }) => {
@@ -348,6 +348,16 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     );
   };
 
+  // ------ style ของ wrapper ที่มี CSS var "--mbr" แบบ typed ------
+  const wrapperStyle: StyleWithMbr = {
+    transformOrigin: "50% 50%",
+    transitionProperty: "background-color, border-radius, box-shadow",
+    transitionDuration: "500ms",
+    transitionTimingFunction: "ease-in-out",
+    "--mbr": step >= 2 ? `${BR}px` : "0px",
+    borderRadius: "var(--mbr)",
+  };
+
   return (
     <div className={cn("relative w-screen h-screen overflow-hidden flex items-center justify-center gap-6")}>
       <motion.div
@@ -357,21 +367,9 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         initial="step1"
         animate={`step${step}` as keyof typeof containerVariants}
         transition={{ layout: { duration: 0 } }}
-        // ใช้ CSS var สำหรับรัศมี (ทั้ง wrapper และ bgLayer อ่านค่าจากตัวเดียวกัน)
-        style={{
-          // ล็อก origin เพื่อกัน scale กระชาก
-          transformOrigin: "50% 50%",
-          // ให้ transition เฉพาะสี/เงา/ขอบมนด้วย CSS (แต่ borderRadius จริงถูก sync ด้วย motion แล้ว)
-          transitionProperty: "background-color, border-radius, box-shadow",
-          transitionDuration: "500ms",
-          transitionTimingFunction: "ease-in-out",
-          // เผื่ออยากปรับรัศมีทีเดียว
-          ["--mbr" as any]: step >= 2 ? `${BR}px` : "0px",
-          borderRadius: "var(--mbr)",
-        }}
+        style={wrapperStyle}
         className={cn(
           "absolute flex items-center drop-shadow-xl border z-10 min-h-fit justify-center overflow-hidden",
-          // ตัว wrapper ไม่มีสีพื้น (กันเฟรมชนกัน) สีไปอยู่ที่ bgLayer
           "bg-transparent",
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
@@ -382,13 +380,12 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           className="absolute inset-0 pointer-events-none"
           style={{
             borderRadius: "var(--mbr)",
-            // ดีเลย์แค่ตอนเข้า white -> คุมด้วย state bgPhase ด้านบน
             backgroundColor: bgPhase === "white" ? "#ffffff" : "var(--color-primary, #F24822)",
             transition: `background-color 500ms ease-in-out, border-radius 500ms ease-in-out, box-shadow 500ms ease-in-out`,
           }}
         />
 
-        {/* โลโก้ – ไม่มี transform ที่ layer รูป ลด glitch */}
+        {/* โลโก้ */}
         <div className={step < 6 ? "m-6" : "m-0"} style={{ position: "relative", zIndex: 1 }}>
           <CrossfadeLogo showWhite={showWhiteLogo} />
         </div>
