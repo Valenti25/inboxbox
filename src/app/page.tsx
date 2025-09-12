@@ -16,8 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type React from "react";
 
 /* ===== Type helpers ===== */
-type CSSVars<T extends string> = React.CSSProperties &
-  Record<T, string | number>;
+type CSSVars<T extends string> = React.CSSProperties & Record<T, string | number>;
 type StyleWithMbr = CSSVars<"--mbr">;
 
 interface ComponentProps {
@@ -120,7 +119,7 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
             exit="exit"
             transition={{ duration: 0.6, stiffness: 75 }}
             className={cn(
-              "absolute flex items-center bg-[#F24822]  drop-shadow-xl z-10 min-h-80 justify-center overflow-hidden",
+              "absolute flex items-center bg-[#F24822]  drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
               step >= 2,
               step >= 3 && "justify-start p-8",
               step >= 4 &&
@@ -187,26 +186,30 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
   const BR = 16;
 
+  // 👇 ปรับ timing ให้ดรอปช้าลงและนุ่มขึ้น
   const MOBILE_ANIM = {
     container: 0.8,
-    fade: 0.7,
+    fade: 0.9,          // เดิม 0.7
     stagger: 0,
     delay2: 0.22,
     delay3: 0.26,
     delay4: 0.22,
-    delay6: 0.16,
-    contentDelay: 0.08,
+    delay6: 0.36,       // เดิม 0.16 – หน่วงก่อนเริ่มดรอป
+    contentDelay: 0.14, // เดิม 0.08
     contentDur: 0.28,
+
+    dropDur: 2.1,       // เวลาเลื่อนลงของ step6
+    itemFadeDur: 0.7,   // เฟดของคอนเทนต์ภายใน
   };
 
   const ease = cubicBezier(0.2, 0.8, 0.2, 1);
+  const springy = cubicBezier(0.16, 1, 0.3, 1); // นุ่มหนึบเวลาลง
 
   const containerVariants = {
     step1: {
       width: "100%",
       height: "100%",
       scale: 2,
-      // NOTE: ไม่แอนิเมต borderRadius ทาง Motion — ป้องกันดีเลย์มุม
       transition: { duration: MOBILE_ANIM.container, ease },
     },
     step2: {
@@ -240,15 +243,16 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         ease,
       },
     },
+    // 👇 ทำดรอปให้ช้าลงอย่างเห็นได้ชัด
     step6: {
       width: "90%",
       height: "auto",
       scale: 1,
-      y: 0,
+      y: [-12, -8, -4, -2, 0] as number[],
       transition: {
         delay: MOBILE_ANIM.delay6,
-        duration: MOBILE_ANIM.container,
-        ease,
+        duration: MOBILE_ANIM.dropDur,
+        ease: springy,
       },
     },
   } as const;
@@ -270,18 +274,16 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: MOBILE_ANIM.contentDur, ease },
+      transition: { duration: MOBILE_ANIM.itemFadeDur, ease },
     },
   } as const;
 
-  // === จุดสำคัญ: ล็อก radius เดียว ใช้ทุกเลเยอร์ + ปิดการ transition radius ของ Motion ===
+  // ล็อก radius + ปิด transition radius ของ Motion
   const wrapperStyle: StyleWithMbr = {
     "--mbr": `${BR}px`,
     borderRadius: "var(--mbr)",
     transformOrigin: "50% 50%",
-    // ให้เบราว์เซอร์จัดเพนต์ของคอนเทนต์นี้แยกออก ลดฟลิ้ก/ดีเลย์
     contain: "paint",
-    // อนุญาตให้ transition เฉพาะ bg/shadow ที่จำเป็น (ไม่รวม border-radius)
     transitionProperty: "background-color, box-shadow",
     transitionDuration: `${MOBILE_ANIM.container * 1000}ms`,
     transitionTimingFunction: "ease-in-out",
@@ -305,7 +307,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         variants={containerVariants}
         initial="step1"
         animate={`step${step}` as keyof typeof containerVariants}
-        // ปิด borderRadius animation ทาง Motion
         transition={{ layout: { duration: 0 }, borderRadius: { duration: 0 } }}
         style={wrapperStyle}
         className={cn(
@@ -320,7 +321,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           className="absolute inset-0 pointer-events-none"
           style={{
             borderRadius: "var(--mbr)",
-            // คลิปด้วย radius เดียวกัน (กันอาการมุมตามไม่ทัน)
             clipPath: "inset(0 round var(--mbr))",
             backgroundColor: "var(--color-primary, #F24822)",
             willChange: "opacity",
@@ -363,10 +363,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
                   {/* #1 ไอคอนขาว (พื้นส้ม) */}
                   <motion.div
                     className="absolute inset-0"
-                    style={{
-                      willChange: "opacity",
-                      transform: "translateZ(0)",
-                    }}
+                    style={{ willChange: "opacity", transform: "translateZ(0)" }}
                     initial={false}
                     animate={{ opacity: isOrange ? 1 : 0 }}
                     transition={bgTransition}
@@ -384,10 +381,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
                   {/* #2 ไอคอนสี (พื้นขาว) */}
                   <motion.div
                     className="absolute inset-0"
-                    style={{
-                      willChange: "opacity",
-                      transform: "translateZ(0)",
-                    }}
+                    style={{ willChange: "opacity", transform: "translateZ(0)" }}
                     initial={false}
                     animate={{ opacity: isOrange ? 0 : 1 }}
                     transition={bgTransition}
@@ -414,7 +408,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
             variants={groupVariants}
             initial="hidden"
             animate="show"
-            className="flex flex-col items-center text-center w-full h-full"
+            className="flex flex-col items-center text-center w/full h/full"
             style={{
               position: "relative",
               zIndex: 1,
