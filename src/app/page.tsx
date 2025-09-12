@@ -15,8 +15,9 @@ import LoginForm, {
 import { useIsMobile } from "@/hooks/use-mobile";
 import type React from "react";
 
-/* ===== Type helpers: CSS Vars (แก้ปัญหา no-explicit-any) ===== */
-type CSSVars<T extends string> = React.CSSProperties & Record<T, string | number>;
+/* ===== Type helpers ===== */
+type CSSVars<T extends string> = React.CSSProperties &
+  Record<T, string | number>;
 type StyleWithMbr = CSSVars<"--mbr">;
 
 interface ComponentProps {
@@ -26,7 +27,6 @@ interface ComponentProps {
 }
 
 /* ========================= Desktop ========================= */
-
 function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
   const refA = useRef<HTMLDivElement | null>(null);
   const [aHeight, setAHeight] = useState<number | null>(null);
@@ -102,7 +102,11 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
   } as const;
 
   return (
-    <div className={cn("relative w-screen h-screen overflow-hidden flex items-center justify-center gap-6")}>
+    <div
+      className={cn(
+        "relative w-screen h-screen overflow-hidden flex items-center mx-auto text-center justify-center gap-6",
+      )}
+    >
       <AnimatePresence mode="sync">
         {/* === Carousel Container === */}
         {step >= 1 && (
@@ -116,16 +120,22 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
             exit="exit"
             transition={{ duration: 0.6, stiffness: 75 }}
             className={cn(
-              "absolute flex items-center bg-[#F24822] drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
+              "absolute flex items-center bg-[#F24822]  drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
               step >= 2,
               step >= 3 && "justify-start p-8",
-              step >= 4 && "flex-col items-start min-w-lg max-h-[685px] min-h-[600px]",
+              step >= 4 &&
+                "flex-col items-start min-w-lg max-h-[685px] min-h-[600px]",
               step === 6 && "static",
             )}
           >
             {/* Logo */}
             <motion.div layout transition={{ duration: 0.6, type: "tween" }}>
-              <Image src={"/logo/logo.svg"} width={117} height={32} alt="Logo" />
+              <Image
+                src={"/logo/logo.svg"}
+                width={117}
+                height={32}
+                alt="Logo"
+              />
             </motion.div>
 
             {/* Carousel */}
@@ -136,7 +146,10 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.6, ease: cubicBezier(0.42, 0, 0.58, 1) }}
+                transition={{
+                  duration: 0.6,
+                  ease: cubicBezier(0.42, 0, 0.58, 1),
+                }}
                 className="flex flex-col items-center text-center gap-4 w-full"
               >
                 <CustomCarousel />
@@ -161,13 +174,6 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
               step === 6 && "static max-w-1/5 gap-4",
             )}
           >
-            <Image
-              src={"/logo/logo-no-text.svg"}
-              width={64}
-              height={64}
-              alt="Color Logo"
-              className="mr-auto"
-            />
             <LoginForm form={form} onSubmit={onSubmit} />
           </motion.div>
         )}
@@ -179,17 +185,18 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 /* ========================= Mobile ========================= */
 
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
-  const BR = 16; // มุมคงที่ทุกเฟรม
+  const BR = 16;
 
-  // ✨ คุมค่าความเร็วไว้ที่นี่
   const MOBILE_ANIM = {
-    container: 0.8,   // เดิม ~0.55
-    fade: 0.7,        // เดิม ~0.5
-    stagger: 0.12,    // เดิม 0.08
-    delay2: 0.22,     // step2 delay เดิม 0.18
-    delay3: 0.26,     // step3 delay เดิม 0.22
-    delay4: 0.22,     // step4 delay เดิม 0.18
-    delay6: 0.16,     // step6 delay เดิม 0.12
+    container: 0.8,
+    fade: 0.7,
+    stagger: 0,
+    delay2: 0.22,
+    delay3: 0.26,
+    delay4: 0.22,
+    delay6: 0.16,
+    contentDelay: 0.08,
+    contentDur: 0.28,
   };
 
   const ease = cubicBezier(0.2, 0.8, 0.2, 1);
@@ -199,38 +206,50 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       width: "100%",
       height: "100%",
       scale: 2,
-      borderRadius: `${BR}px`,
+      // NOTE: ไม่แอนิเมต borderRadius ทาง Motion — ป้องกันดีเลย์มุม
       transition: { duration: MOBILE_ANIM.container, ease },
     },
     step2: {
       width: "auto",
       height: "auto",
       scale: 1,
-      borderRadius: `${BR}px`,
-      transition: { delay: MOBILE_ANIM.delay2, duration: MOBILE_ANIM.container, ease },
+      transition: {
+        delay: MOBILE_ANIM.delay2,
+        duration: MOBILE_ANIM.container,
+        ease,
+      },
     },
     step3: {
       width: "auto",
       height: "auto",
       scale: 1,
-      borderRadius: `${BR}px`,
-      transition: { delay: MOBILE_ANIM.delay3, duration: MOBILE_ANIM.container, ease },
+      transition: {
+        delay: MOBILE_ANIM.delay3,
+        duration: MOBILE_ANIM.container,
+        ease,
+      },
     },
     step4: {
       width: "90%",
       height: "auto",
       scale: 1,
       y: -12,
-      borderRadius: `${BR}px`,
-      transition: { delay: MOBILE_ANIM.delay4, duration: MOBILE_ANIM.container, ease },
+      transition: {
+        delay: MOBILE_ANIM.delay4,
+        duration: MOBILE_ANIM.container,
+        ease,
+      },
     },
     step6: {
       width: "90%",
       height: "auto",
       scale: 1,
-      y: [-12, -4, 0] as number[],
-      borderRadius: `${BR}px`,
-      transition: { delay: MOBILE_ANIM.delay6, duration: MOBILE_ANIM.container, ease },
+      y: 0,
+      transition: {
+        delay: MOBILE_ANIM.delay6,
+        duration: MOBILE_ANIM.container,
+        ease,
+      },
     },
   } as const;
 
@@ -238,43 +257,56 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { when: "beforeChildren", delay: 0.24, staggerChildren: MOBILE_ANIM.stagger },
+      transition: {
+        when: "beforeChildren",
+        delay: MOBILE_ANIM.contentDelay,
+        staggerChildren: 0,
+      },
     },
   } as const;
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 8 },
+    hidden: { opacity: 0, y: -4 },
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.56, ease }, // ช้าลงนิดให้เข้าจังหวะกล่อง
+      transition: { duration: MOBILE_ANIM.contentDur, ease },
     },
   } as const;
 
+  // === จุดสำคัญ: ล็อก radius เดียว ใช้ทุกเลเยอร์ + ปิดการ transition radius ของ Motion ===
   const wrapperStyle: StyleWithMbr = {
-    transformOrigin: "50% 50%",
-    transitionProperty: "background-color, border-radius, box-shadow",
-    transitionDuration: `${MOBILE_ANIM.container * 1000}ms`, // sync กับ container
-    transitionTimingFunction: "ease-in-out",
     "--mbr": `${BR}px`,
     borderRadius: "var(--mbr)",
+    transformOrigin: "50% 50%",
+    // ให้เบราว์เซอร์จัดเพนต์ของคอนเทนต์นี้แยกออก ลดฟลิ้ก/ดีเลย์
+    contain: "paint",
+    // อนุญาตให้ transition เฉพาะ bg/shadow ที่จำเป็น (ไม่รวม border-radius)
+    transitionProperty: "background-color, box-shadow",
+    transitionDuration: `${MOBILE_ANIM.container * 1000}ms`,
+    transitionTimingFunction: "ease-in-out",
   };
 
-  const isOrange = step < 3;
-  const bgTransition = { duration: MOBILE_ANIM.fade, ease }; // ✨ crossfade ช้าลง
+  const isOrange = step < 4;
+  const bgTransition = { duration: MOBILE_ANIM.fade, ease };
 
-  // ... (ที่เหลือเหมือนเดิม)
-
+  const PRE_LOGO_SIZE = 44;
+  const FORM_LOGO_SIZE = 96;
 
   return (
-    <div className={cn("relative w-screen h-screen overflow-hidden flex items-center justify-center gap-6")}>
+    <div
+      className={cn(
+        "relative w-screen h-screen overflow-hidden flex items-center justify-center gap-6",
+      )}
+    >
       <motion.div
         key="MobileLoginContainer"
         layout="position"
         variants={containerVariants}
         initial="step1"
         animate={`step${step}` as keyof typeof containerVariants}
-        transition={{ layout: { duration: 0 } }}
+        // ปิด borderRadius animation ทาง Motion
+        transition={{ layout: { duration: 0 }, borderRadius: { duration: 0 } }}
         style={wrapperStyle}
         className={cn(
           "absolute flex items-center drop-shadow-xl border z-10 min-h-fit justify-center overflow-hidden",
@@ -282,12 +314,14 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
       >
-        {/* พื้นหลังสองชั้น ใช้ borderRadius: inherit ให้ทรงเท่ากันเป๊ะ */}
+        {/* พื้นหลังสองชั้น — คลิปด้วย clipPath ให้มุมติดไปพร้อมกันทุกเฟรม */}
         <motion.div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
           style={{
-            borderRadius: "inherit",
+            borderRadius: "var(--mbr)",
+            // คลิปด้วย radius เดียวกัน (กันอาการมุมตามไม่ทัน)
+            clipPath: "inset(0 round var(--mbr))",
             backgroundColor: "var(--color-primary, #F24822)",
             willChange: "opacity",
             transform: "translateZ(0)",
@@ -300,7 +334,8 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
           style={{
-            borderRadius: "inherit",
+            borderRadius: "var(--mbr)",
+            clipPath: "inset(0 round var(--mbr))",
             backgroundColor: "#ffffff",
             willChange: "opacity",
             transform: "translateZ(0)",
@@ -310,30 +345,69 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           transition={bgTransition}
         />
 
-        {/* โลโก้ crossfade ให้เข้ากับพื้นหลัง */}
-        <div className={step < 6 ? "m-6" : "m-0"} style={{ position: "relative", zIndex: 1 }}>
-          <div className="relative" style={{ width: 44, height: 44 }}>
-            <motion.div
-              className="absolute inset-0"
-              style={{ borderRadius: "inherit", willChange: "opacity", transform: "translateZ(0)" }}
-              initial={false}
-              animate={{ opacity: isOrange ? 1 : 0 }}
-              transition={bgTransition}
+        {/* โลโก้ก่อนฟอร์ม */}
+        {step < 6 && (
+          <div className="m-6" style={{ position: "relative", zIndex: 1 }}>
+            <div
+              className="relative"
+              style={{ width: PRE_LOGO_SIZE, height: PRE_LOGO_SIZE }}
             >
-              <Image src={"/logo/logo-no-text-white.svg"} width={44} height={44} alt="White Logo" priority draggable={false} />
-            </motion.div>
-            <motion.div
-              className="absolute inset-0"
-              style={{ borderRadius: "inherit", willChange: "opacity", transform: "translateZ(0)" }}
-              initial={false}
-              animate={{ opacity: isOrange ? 0 : 1 }}
-              transition={bgTransition}
-            >
-              <Image src={"/logo/logo-no-text.svg"} width={44} height={44} alt="Color Logo" priority draggable={false} />
-            </motion.div>
-          </div>
-        </div>
+              <AnimatePresence mode="popLayout">
+                <motion.div
+                  key="pre-logos"
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, transition: { duration: 0 } }}
+                >
+                  {/* #1 ไอคอนขาว (พื้นส้ม) */}
+                  <motion.div
+                    className="absolute inset-0"
+                    style={{
+                      willChange: "opacity",
+                      transform: "translateZ(0)",
+                    }}
+                    initial={false}
+                    animate={{ opacity: isOrange ? 1 : 0 }}
+                    transition={bgTransition}
+                  >
+                    <Image
+                      src={"/logo/logo-no-text-white.svg"}
+                      width={PRE_LOGO_SIZE}
+                      height={PRE_LOGO_SIZE}
+                      alt="Logo White"
+                      priority
+                      draggable={false}
+                    />
+                  </motion.div>
 
+                  {/* #2 ไอคอนสี (พื้นขาว) */}
+                  <motion.div
+                    className="absolute inset-0"
+                    style={{
+                      willChange: "opacity",
+                      transform: "translateZ(0)",
+                    }}
+                    initial={false}
+                    animate={{ opacity: isOrange ? 0 : 1 }}
+                    transition={bgTransition}
+                  >
+                    <Image
+                      src={"/logo/logo-no-text.svg"}
+                      width={PRE_LOGO_SIZE}
+                      height={PRE_LOGO_SIZE}
+                      alt="Logo Color"
+                      priority
+                      draggable={false}
+                    />
+                  </motion.div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
+
+        {/* กลุ่มฟอร์ม + โลโก้ #3 */}
         {step >= 6 && (
           <motion.div
             key="LoginGroup"
@@ -341,9 +415,23 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
             initial="hidden"
             animate="show"
             className="flex flex-col items-center text-center w-full h-full"
-            style={{ position: "relative", zIndex: 1 }}
+            style={{
+              position: "relative",
+              zIndex: 1,
+              willChange: "opacity, transform",
+            }}
           >
-            <motion.div variants={itemVariants}>
+            <motion.div variants={itemVariants} className="mb-3 mt-5">
+              <Image
+                src={"/logo/inblock.svg"}
+                width={FORM_LOGO_SIZE}
+                height={FORM_LOGO_SIZE}
+                alt="App Icon Large"
+                priority
+                draggable={false}
+              />
+            </motion.div>
+            <motion.div variants={itemVariants} className="w-full">
               <LoginForm form={form} onSubmit={onSubmit} hideForm={false} />
             </motion.div>
           </motion.div>
@@ -426,8 +514,7 @@ export default function LandingAnimation() {
         >
           Next
         </button>
-      </div>
-      */}
+      </div> */}
     </>
   );
 }
