@@ -97,7 +97,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
             >
               <Form {...form}>
                 <form
-                  className="px-6 lg:pt-0 pt-4 space-y-4"
+                  className="px-6 lg:pt-0 pt-2 space-y-2 lg:space-y-4"
                   onSubmit={form.handleSubmit(handleSubmitEmail)}
                 >
                   {/* Email */}
@@ -177,7 +177,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                   </div>
 
                   {/* Remember + Forgot */}
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center py-2 justify-between lg:pt-1">
                     <FormField
                       control={form.control}
                       name="remember"
@@ -227,7 +227,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                   {/* หรือ ดำเนินการต่อด้วย */}
                   <div className="flex items-center gap-3">
                     <Separator className="flex-1 bg-[#F24822]/10" />
-                    <span className="px-1.5 font-medium text-xs text-[#71717A]">
+                    <span className="px-1.5 py-1 font-medium text-xs text-[#71717A]">
                       หรือ ดำเนินการต่อด้วย
                     </span>
                     <Separator className="flex-1 bg-[#F24822]/10" />
@@ -277,7 +277,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                   </p>
 
                   {/* ยังไม่มีบัญชี? ลงทะเบียน */}
-                  <div className="text-center pt-1 pb-6">
+                  <div className="text-center lg:pt-1 lg:pb-6">
                     <span className="text-xs lg:text-sm font-medium text-[#71717A]">ยังไม่มีบัญชี? </span>
                     <button
                       type="button"

@@ -421,7 +421,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
               willChange: "opacity, transform",
             }}
           >
-            <motion.div variants={itemVariants} className="mb-3 mt-5">
+            <motion.div variants={itemVariants} className="mb-4 lg:mt-5">
               <Image
                 src={"/logo/inblock.svg"}
                 width={FORM_LOGO_SIZE}
