@@ -5,13 +5,13 @@ import Lottie from "lottie-react";
 type Props = {
   /** ใส่ path ใน public เช่น /lottie/login-desktop.json */
   src: string;
-  className?: string;      // ใช้กำหนดขนาด เช่น w-16 h-16
+  className?: string; // ใช้กำหนดขนาด เช่น w-16 h-16
   loop?: boolean;
   autoplay?: boolean;
 };
 
 export default function LottiePlayer({
-  src="/images/Dark.json",
+  src = "/images/Dark.json",
   className = "w-16 h-16",
   loop = true,
   autoplay = true,
@@ -25,7 +25,9 @@ export default function LottiePlayer({
       const json = await res.json();
       if (alive) setData(json);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [src]);
 
   if (!data) return null;

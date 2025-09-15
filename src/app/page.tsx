@@ -68,26 +68,25 @@ function LoadingOverlay({
                     className="md:max-w-5x mx-auto md:min-w-6xl max-w-2xl min-w-3xl"
                   />
                   <div className="pointer-events-none fixed left-1/2 -translate-x-1/2 w-[240px]  md:w-[360px]">
-                  {/* track */}
-                  <div className="h-2 w-full bg-white/70 rounded-full">
-                    {/* fill */}
-                    <motion.div
-                      key={show ? "progress-run" : "progress-reset"}
-                      className="h-2 rounded-full"
-                      style={{ backgroundColor: "#F24822" }}
-                      initial={{ width: "0%" }}
-                      animate={{ width: "100%" }}
-                      transition={{
-                        duration: durationMs / 1000,
-                        ease: "linear",
-                      }}
-                    />
+                    {/* track */}
+                    <div className="h-2 w-full bg-white/70 rounded-full">
+                      {/* fill */}
+                      <motion.div
+                        key={show ? "progress-run" : "progress-reset"}
+                        className="h-2 rounded-full"
+                        style={{ backgroundColor: "#F24822" }}
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{
+                          duration: durationMs / 1000,
+                          ease: "linear",
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
                 </div>
 
                 {/* Progress bar ด้านล่าง (ยึดตาม durationMs) */}
-                
               </div>
             </motion.div>
           </div>
@@ -103,6 +102,7 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
   const [aHeight, setAHeight] = useState<number | null>(null);
 
   useLayoutEffect(() => {
+     if (step >= 6) return;
     const el = refA.current;
     if (!el) return;
 
@@ -319,7 +319,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
       width: "90%",
       height: "auto",
       scale: 1,
-      y: [-12, -8, -4, -2, 0] as number[],
       transition: {
         delay: MOBILE_ANIM.delay6,
         duration: MOBILE_ANIM.dropDur,
@@ -373,7 +372,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     >
       <motion.div
         key="MobileLoginContainer"
-        layout="position"
         variants={containerVariants}
         initial="step1"
         animate={`step${step}` as keyof typeof containerVariants}

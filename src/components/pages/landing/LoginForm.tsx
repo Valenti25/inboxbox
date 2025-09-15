@@ -94,7 +94,8 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
             เริ่มต้นใช้งาน
           </h1>
           <p className="text-sm text-[#736862]">
-            ให้คุณจัดการทุกการสนทนาจาก<br className="sm:hidden" />
+            ให้คุณจัดการทุกการสนทนาจาก
+            <br className="sm:hidden" />
             LINE, Facebook, Instagram และอื่นๆได้
             <span className="text-[#F24822] font-semibold"> ในแอปเดียว</span>
           </p>
@@ -125,7 +126,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                       render={({ field }) => {
                         const { error } = form.getFieldState(
                           "email",
-                          form.formState
+                          form.formState,
                         );
                         return (
                           <FormItem>
@@ -159,7 +160,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                       render={({ field }) => {
                         const { error } = form.getFieldState(
                           "password",
-                          form.formState
+                          form.formState,
                         );
                         return (
                           <FormItem>
@@ -227,7 +228,7 @@ function LoginForm({ form, onSubmit, hideForm = false }: LoginFormProps) {
                               "data-[state=checked]:bg-[#F24822]",
                               "data-[state=checked]:border-[#F24822]",
                               "data-[state=checked]:text-white",
-                              "[&_svg]:h-3 [&_svg]:w-3"
+                              "[&_svg]:h-3 [&_svg]:w-3",
                             )}
                           />
                           <label

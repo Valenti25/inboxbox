@@ -142,7 +142,7 @@ type FormMessageProps = React.ComponentProps<"p"> & {
   startIcon?: React.ReactNode;
 };
 
-function FormMessage({ className ,...props }: FormMessageProps) {
+function FormMessage({ className, ...props }: FormMessageProps) {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error?.message ?? "") : props.children;
 
@@ -154,10 +154,13 @@ function FormMessage({ className ,...props }: FormMessageProps) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-destructive text-sm flex gap-1 items-center font-semibold", className)}
+      className={cn(
+        "text-destructive text-sm flex gap-1 items-center font-semibold",
+        className,
+      )}
       {...props}
     >
-      {props.startIcon ?? <CircleAlert size={16}/>}
+      {props.startIcon ?? <CircleAlert size={16} />}
       {body}
     </p>
   );

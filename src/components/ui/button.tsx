@@ -51,7 +51,7 @@ function LoadingSpinner(props: React.SVGProps<SVGSVGElement>) {
       />
     </svg>
   );
-};
+}
 
 function Button({
   className,
@@ -76,7 +76,9 @@ function Button({
         buttonVariants({ variant, size, className }),
       )}
       {...props}
-    >{isLoading ? <LoadingSpinner className="animate-spin" /> : children}</Comp>
+    >
+      {isLoading ? <LoadingSpinner className="animate-spin" /> : children}
+    </Comp>
   );
 }
 
