@@ -41,17 +41,72 @@ function useIsDesktopWide() {
     const update = () => setOk(mqWidth.matches && !mqReduce.matches);
     update();
     const on = (mql: MediaQueryList) => {
-      try { mql.addEventListener("change", update); }
-      catch { mql.addListener(update); }
+      try {
+        mql.addEventListener("change", update);
+      } catch {
+        // Safari < 14
+        mql.addListener(update);
+      }
     };
     const off = (mql: MediaQueryList) => {
-      try { mql.removeEventListener("change", update); }
-      catch { mql.removeListener(update); }
+      try {
+        mql.removeEventListener("change", update);
+      } catch {
+        mql.removeListener(update);
+      }
     };
     [mqWidth, mqReduce].forEach(on);
     return () => [mqWidth, mqReduce].forEach(off);
   }, []);
   return ok;
+}
+
+function SafePicture({
+  src,
+  alt,
+  priority,
+  aspect = "aspect-[4/3]",
+}: {
+  src: string;
+  alt: string;
+  priority?: boolean;
+  aspect?: string;
+}) {
+  const isSvg = src.toLowerCase().endsWith(".svg");
+
+  if (isSvg) {
+    return (
+      <div
+        className={`relative w-full max-w-2xl mx-auto ${aspect} overflow-hidden rounded-2xl`}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-full object-contain block"
+          draggable={false}
+          loading={priority ? "eager" : "lazy"}
+          style={{ transform: "translateZ(0)", backfaceVisibility: "hidden" }}
+        />
+      </div>
+    );
+  }
+
+  // ไฟล์ภาพอื่น ๆ ใช้ next/image แบบ fill
+  return (
+    <div
+      className={`relative w-full max-w-xl mx-auto ${aspect} overflow-hidden rounded-2xl`}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes="(min-width:1024px) 640px, 100vw"
+        className="object-contain"
+        priority={priority}
+        draggable={false}
+      />
+    </div>
+  );
 }
 
 export default function CustomCarousel() {
@@ -116,7 +171,10 @@ export default function CustomCarousel() {
 
   /* ===== lifecycle autoplay ===== */
   useEffect(() => {
-    if (!api || !isDesktop) { stop(); return; }
+    if (!api || !isDesktop) {
+      stop();
+      return;
+    }
     start();
 
     const onPointerDown = () => stop();
@@ -140,20 +198,24 @@ export default function CustomCarousel() {
   const dots = useMemo(() => Array.from({ length: count }), [count]);
 
   return (
-    <div ref={rootRef} className="h-full flex flex-col gap-3 font-thai select-none">
-      <Carousel opts={{ loop: true }} setApi={setApi} className="h-full [&>div]:h-full">
+    <div
+      ref={rootRef}
+      className="h-full flex flex-col gap-3 font-thai select-none"
+    >
+      <Carousel
+        opts={{ loop: true }}
+        setApi={setApi}
+        className="h-full [&>div]:h-full"
+      >
         <CarouselContent className="h-full">
           {mockCarouselData.map((item, i) => (
             <CarouselItem key={i} className="h-full">
               <div className="space-y-6 flex flex-1 flex-col">
-                <Image
+                <SafePicture
                   src={item.image}
                   alt={item.title}
-                  width={0}
-                  height={0}
-                  className="h-auto object-contain w-full max-w-xl mx-auto block"
                   priority={i === 0}
-                  draggable={false}
+                  aspect="aspect-[16/9]"
                 />
                 <div className="text-white space-y-2 text-left">
                   <Label className="text-3xl font-semibold">{item.title}</Label>
@@ -169,8 +231,14 @@ export default function CustomCarousel() {
         {dots.map((_, i) => (
           <button
             key={i}
-            onClick={() => { api?.scrollTo(i); stop(); start(); }}
-            className={`w-3 h-3 rounded-full transition-opacity ${i === current ? "bg-white" : "bg-white/50"}`}
+            onClick={() => {
+              api?.scrollTo(i);
+              stop();
+              start();
+            }}
+            className={`w-3 h-3 rounded-full transition-opacity ${
+              i === current ? "bg-white" : "bg-white/50"
+            }`}
             aria-label={`ไปสไลด์ที่ ${i + 1}`}
           />
         ))}
