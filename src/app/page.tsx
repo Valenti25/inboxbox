@@ -14,9 +14,11 @@ import LoginForm, {
 } from "@/components/pages/landing/LoginForm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type React from "react";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 
 /* ===== Type helpers ===== */
-type CSSVars<T extends string> = React.CSSProperties & Record<T, string | number>;
+type CSSVars<T extends string> = React.CSSProperties &
+  Record<T, string | number>;
 type StyleWithMbr = CSSVars<"--mbr">;
 
 /* ===== small helper ===== */
@@ -28,16 +30,19 @@ interface ComponentProps {
   onSubmit: (values: LoginFormValues) => void;
 }
 
-/* ========================= Loading Overlay ========================= */
-function LoadingOverlay({ show }: { show: boolean }) {
-  const ease = cubicBezier(0.2, 0.8, 0.2, 1);
-
+function LoadingOverlay({
+  show,
+  durationMs = 1700,
+}: {
+  show: boolean;
+  durationMs?: number;
+}) {
   return (
     <AnimatePresence>
       {show && (
         <motion.div
           key="loading-overlay"
-          className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-[1px]"
+          className="fixed inset-0 z-[1000] backdrop-blur-[1px] flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -45,36 +50,47 @@ function LoadingOverlay({ show }: { show: boolean }) {
           aria-live="polite"
           aria-busy="true"
         >
-          {/* กล่องโหลดแบบ "ดิ่ง" ลงเบาๆ */}
-          <motion.div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            initial={{ y: -24, opacity: 0, scale: 0.98 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 12, opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.35, ease }}
-          >
-            <div className="mx-auto flex w-[260px] max-w-[90vw] flex-col items-center rounded-2xl bg-white/95 p-6 shadow-2xl ring-1 ring-black/5">
-              {/* สปินเนอร์ */}
-              <motion.div
-                aria-hidden="true"
-                className="relative h-10 w-10"
-                initial={false}
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, ease: "linear", duration: 1.2 }}
-              >
-                {/* วงกลมสองชั้นให้ดูแน่น */}
-                <span className="absolute inset-0 rounded-full border-2 border-neutral-200" />
-                <span className="absolute inset-0 rounded-full border-t-2 border-t-[#F24822] border-transparent" />
-              </motion.div>
+          {/* สแต็กตรงกลางทั้งหมด */}
+          <div className="relative">
+            {/* กล่องโหลด */}
+            <motion.div
+              initial={{ y: -24, opacity: 0, scale: 0.98 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 12, opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.35 }}
+              className="relative"
+            >
+              <div className="mx-auto flex w-screen h-screen items-center rounded-2xl bg-[#E4E4E7] p-6 shadow-2xl ring-1 ring-black/5">
+                {/* Lottie ตรงกลาง */}
+                <div className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 mx-auto">
+                  <LottiePlayer
+                    src="/images/Dark.json"
+                    className="md:max-w-5x mx-auto md:min-w-6xl max-w-2xl min-w-3xl"
+                  />
+                  <div className="pointer-events-none fixed left-1/2 -translate-x-1/2 w-[240px]  md:w-[360px]">
+                  {/* track */}
+                  <div className="h-2 w-full bg-white/70 rounded-full">
+                    {/* fill */}
+                    <motion.div
+                      key={show ? "progress-run" : "progress-reset"}
+                      className="h-2 rounded-full"
+                      style={{ backgroundColor: "#F24822" }}
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{
+                        duration: durationMs / 1000,
+                        ease: "linear",
+                      }}
+                    />
+                  </div>
+                </div>
+                </div>
 
-              <div className="mt-4 text-base font-medium text-neutral-900">
-                กำลังโหลด...
+                {/* Progress bar ด้านล่าง (ยึดตาม durationMs) */}
+                
               </div>
-              <div className="mt-1 text-xs text-neutral-500">
-                กำลังเข้าสู่ระบบ โปรดรอสักครู่
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -417,7 +433,10 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
                   {/* white icon on orange */}
                   <motion.div
                     className="absolute inset-0"
-                    style={{ willChange: "opacity", transform: "translateZ(0)" }}
+                    style={{
+                      willChange: "opacity",
+                      transform: "translateZ(0)",
+                    }}
                     initial={false}
                     animate={{ opacity: isOrange ? 1 : 0 }}
                     transition={bgTransition}
@@ -435,7 +454,10 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
                   {/* colored icon on white */}
                   <motion.div
                     className="absolute inset-0"
-                    style={{ willChange: "opacity", transform: "translateZ(0)" }}
+                    style={{
+                      willChange: "opacity",
+                      transform: "translateZ(0)",
+                    }}
                     initial={false}
                     animate={{ opacity: isOrange ? 0 : 1 }}
                     transition={bgTransition}
@@ -535,14 +557,13 @@ export default function LandingAnimation() {
     defaultValues: { email: "test@example.com", password: "1234" },
   });
 
-  // === Submit: โชว์โหลดแทนอนิเมชันรีเวิร์ส ===
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true); // เปิดโหลด
 
       // TODO: เรียก API ของจริงตรงนี้
       // ตัวอย่างจำลองดีเลย์
-      await sleep(1200);
+      await sleep(1700);
 
       console.log("Submitted:", values);
 
@@ -566,7 +587,7 @@ export default function LandingAnimation() {
 
       {/* Overlay โหลดแบบ “ดิ่ง” */}
       <LoadingOverlay show={isLoading} />
-       {/* DEBUG STEPPER
+      {/* DEBUG STEPPER
       <div className="absolute bottom-5 right-5 flex gap-2 z-50 bg-black/50 p-2 rounded">
         <button
           onClick={() => setStep((s) => Math.max(1, s - 1))}
