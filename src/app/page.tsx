@@ -102,7 +102,7 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
   const [aHeight, setAHeight] = useState<number | null>(null);
 
   useLayoutEffect(() => {
-     if (step >= 6) return;
+    
     const el = refA.current;
     if (!el) return;
 
@@ -234,7 +234,7 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
         {step >= 6 && (aHeight ?? 0) > 0 && (
           <motion.div
             key="LoginContainer"
-            layout
+            layout={step < 6}
             variants={loginContainerVariants}
             initial="hidden"
             animate="visible"
