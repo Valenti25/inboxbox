@@ -19,10 +19,66 @@ import type React from "react";
 type CSSVars<T extends string> = React.CSSProperties & Record<T, string | number>;
 type StyleWithMbr = CSSVars<"--mbr">;
 
+/* ===== small helper ===== */
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 interface ComponentProps {
   step: number;
   form: UseFormReturn<LoginFormValues>;
   onSubmit: (values: LoginFormValues) => void;
+}
+
+/* ========================= Loading Overlay ========================= */
+function LoadingOverlay({ show }: { show: boolean }) {
+  const ease = cubicBezier(0.2, 0.8, 0.2, 1);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          key="loading-overlay"
+          className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-[1px]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          aria-live="polite"
+          aria-busy="true"
+        >
+          {/* กล่องโหลดแบบ "ดิ่ง" ลงเบาๆ */}
+          <motion.div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            initial={{ y: -24, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 12, opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.35, ease }}
+          >
+            <div className="mx-auto flex w-[260px] max-w-[90vw] flex-col items-center rounded-2xl bg-white/95 p-6 shadow-2xl ring-1 ring-black/5">
+              {/* สปินเนอร์ */}
+              <motion.div
+                aria-hidden="true"
+                className="relative h-10 w-10"
+                initial={false}
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, ease: "linear", duration: 1.2 }}
+              >
+                {/* วงกลมสองชั้นให้ดูแน่น */}
+                <span className="absolute inset-0 rounded-full border-2 border-neutral-200" />
+                <span className="absolute inset-0 rounded-full border-t-2 border-t-[#F24822] border-transparent" />
+              </motion.div>
+
+              <div className="mt-4 text-base font-medium text-neutral-900">
+                กำลังโหลด...
+              </div>
+              <div className="mt-1 text-xs text-neutral-500">
+                กำลังเข้าสู่ระบบ โปรดรอสักครู่
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 /* ========================= Desktop ========================= */
@@ -103,7 +159,7 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
   return (
     <div
       className={cn(
-        "relative w-screen h-screen overflow-hidden flex items-center mx-auto text-center justify-center gap-6",
+        "relative w-[100dvw] h-[100dvh] overflow-hidden flex items-center mx-auto text-center justify-center gap-6",
       )}
     >
       <AnimatePresence mode="sync">
@@ -119,8 +175,7 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
             exit="exit"
             transition={{ duration: 0.6, stiffness: 75 }}
             className={cn(
-              "absolute flex items-center bg-[#F24822]  drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
-              step >= 2,
+              "absolute flex items-center bg-[#F24822] drop-shadow-xl z-10 min-h-32 justify-center overflow-hidden",
               step >= 3 && "justify-start p-8",
               step >= 4 &&
                 "flex-col items-start min-w-lg max-h-[700px] min-h-[610px]",
@@ -134,6 +189,8 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
                 width={117}
                 height={32}
                 alt="Logo"
+                priority
+                draggable={false}
               />
             </motion.div>
 
@@ -186,24 +243,23 @@ function DesktopLanding({ step, form, onSubmit }: ComponentProps) {
 function MobileLanding({ step, form, onSubmit }: ComponentProps) {
   const BR = 16;
 
-  // 👇 ปรับ timing ให้ดรอปช้าลงและนุ่มขึ้น
   const MOBILE_ANIM = {
     container: 0.8,
-    fade: 0.9,          // เดิม 0.7
+    fade: 0.9,
     stagger: 0,
     delay2: 0.22,
     delay3: 0.26,
     delay4: 0.22,
-    delay6: 0.36,       // เดิม 0.16 – หน่วงก่อนเริ่มดรอป
-    contentDelay: 0.14, // เดิม 0.08
+    delay6: 0.36,
+    contentDelay: 0.14,
     contentDur: 0.28,
 
-    dropDur: 2.1,       // เวลาเลื่อนลงของ step6
-    itemFadeDur: 0.7,   // เฟดของคอนเทนต์ภายใน
+    dropDur: 2.1,
+    itemFadeDur: 0.7,
   };
 
   const ease = cubicBezier(0.2, 0.8, 0.2, 1);
-  const springy = cubicBezier(0.16, 1, 0.3, 1); // นุ่มหนึบเวลาลง
+  const springy = cubicBezier(0.16, 1, 0.3, 1);
 
   const containerVariants = {
     step1: {
@@ -243,7 +299,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
         ease,
       },
     },
-    // 👇 ทำดรอปให้ช้าลงอย่างเห็นได้ชัด
     step6: {
       width: "90%",
       height: "auto",
@@ -278,7 +333,6 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
     },
   } as const;
 
-  // ล็อก radius + ปิด transition radius ของ Motion
   const wrapperStyle: StyleWithMbr = {
     "--mbr": `${BR}px`,
     borderRadius: "var(--mbr)",
@@ -298,7 +352,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
   return (
     <div
       className={cn(
-        "relative w-screen h-screen overflow-hidden flex items-center justify-center gap-6",
+        "relative w-[100dvw] h-[100dvh] overflow-hidden flex items-center justify-center gap-6",
       )}
     >
       <motion.div
@@ -315,7 +369,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           step >= 6 && "flex p-6 flex-col gap-3",
         )}
       >
-        {/* พื้นหลังสองชั้น — คลิปด้วย clipPath ให้มุมติดไปพร้อมกันทุกเฟรม */}
+        {/* BG layers */}
         <motion.div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
@@ -345,7 +399,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           transition={bgTransition}
         />
 
-        {/* โลโก้ก่อนฟอร์ม */}
+        {/* Pre-form logo */}
         {step < 6 && (
           <div className="m-6" style={{ position: "relative", zIndex: 1 }}>
             <div
@@ -360,7 +414,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, transition: { duration: 0 } }}
                 >
-                  {/* #1 ไอคอนขาว (พื้นส้ม) */}
+                  {/* white icon on orange */}
                   <motion.div
                     className="absolute inset-0"
                     style={{ willChange: "opacity", transform: "translateZ(0)" }}
@@ -378,7 +432,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
                     />
                   </motion.div>
 
-                  {/* #2 ไอคอนสี (พื้นขาว) */}
+                  {/* colored icon on white */}
                   <motion.div
                     className="absolute inset-0"
                     style={{ willChange: "opacity", transform: "translateZ(0)" }}
@@ -401,7 +455,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
           </div>
         )}
 
-        {/* กลุ่มฟอร์ม + โลโก้ #3 */}
+        {/* Form group */}
         {step >= 6 && (
           <motion.div
             key="LoginGroup"
@@ -439,6 +493,7 @@ function MobileLanding({ step, form, onSubmit }: ComponentProps) {
 
 export default function LandingAnimation() {
   const [step, setStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(false); // <<— ใหม่
   const isMobile = useIsMobile();
   const ready = isMobile !== undefined;
 
@@ -446,7 +501,7 @@ export default function LandingAnimation() {
     if (ready) setStep(1);
   }, [ready]);
 
-  const DEFAULT_TRANSITION_DURATION = isMobile ? 500 : 600;
+  const DEFAULT_FWD_MS = isMobile ? 500 : 600;
 
   const desktopSequence = [
     { action: () => setStep(2) },
@@ -465,23 +520,40 @@ export default function LandingAnimation() {
   const sequence = isMobile ? mobileSequence : desktopSequence;
 
   useEffect(() => {
-    let prevTime = 0;
+    if (!ready) return;
+    let prev = 0;
     const timers = sequence.map(({ action }) => {
-      const delayDuration = prevTime + DEFAULT_TRANSITION_DURATION;
-      prevTime = delayDuration;
-      return window.setTimeout(action, delayDuration);
+      prev += DEFAULT_FWD_MS;
+      return window.setTimeout(action, prev);
     });
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile]);
+  }, [isMobile, ready]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: "test@example.com", password: "1234" },
   });
 
+  // === Submit: โชว์โหลดแทนอนิเมชันรีเวิร์ส ===
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    try {
+      setIsLoading(true); // เปิดโหลด
+
+      // TODO: เรียก API ของจริงตรงนี้
+      // ตัวอย่างจำลองดีเลย์
+      await sleep(1200);
+
+      console.log("Submitted:", values);
+
+      // ตัวอย่าง: เสร็จแล้วค่อยไปหน้า app
+      // router.push("/app");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      // ปิดโหลดถ้าไม่ redirect
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -491,7 +563,10 @@ export default function LandingAnimation() {
       ) : (
         <DesktopLanding step={step} form={form} onSubmit={onSubmit} />
       )}
-      {/* DEBUG STEPPER
+
+      {/* Overlay โหลดแบบ “ดิ่ง” */}
+      <LoadingOverlay show={isLoading} />
+       {/* DEBUG STEPPER
       <div className="absolute bottom-5 right-5 flex gap-2 z-50 bg-black/50 p-2 rounded">
         <button
           onClick={() => setStep((s) => Math.max(1, s - 1))}
@@ -508,7 +583,8 @@ export default function LandingAnimation() {
         >
           Next
         </button>
-      </div> */}
+      </div>
+      */}
     </>
   );
 }

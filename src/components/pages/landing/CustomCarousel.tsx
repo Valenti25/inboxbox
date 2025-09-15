@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Carousel,
   CarouselApi,
@@ -8,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+/* ===== data ตัวอย่าง ===== */
 const mockCarouselData = [
   {
     title: "Detail Feature #1",
@@ -29,56 +32,80 @@ const mockCarouselData = [
   },
 ];
 
-function useIsDesktopAutoplay() {
-  const [isDesktop, setIsDesktop] = useState(false);
-
+/* ===== เดสก์ท็อปแบบกว้าง: แค่กว้างพอ และไม่ reduce motion ===== */
+function useIsDesktopWide() {
+  const [ok, setOk] = useState(false);
   useEffect(() => {
-    // PC: หน้ากว้างอย่างน้อย 1024px และมี pointer แบบเมาส์
-    const mql = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
-    const update = () => setIsDesktop(mql.matches);
+    const mqWidth = window.matchMedia("(min-width: 1024px)");
+    const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setOk(mqWidth.matches && !mqReduce.matches);
     update();
-    // Safari เก่าบางรุ่นไม่มี addEventListener บน MediaQueryList
-    try {
-      mql.addEventListener("change", update);
-      return () => mql.removeEventListener("change", update);
-    } catch {
-      mql.addListener(update);
-      return () => mql.removeListener(update);
-    }
+    const on = (mql: MediaQueryList) => {
+      try { mql.addEventListener("change", update); }
+      catch { mql.addListener(update); }
+    };
+    const off = (mql: MediaQueryList) => {
+      try { mql.removeEventListener("change", update); }
+      catch { mql.removeListener(update); }
+    };
+    [mqWidth, mqReduce].forEach(on);
+    return () => [mqWidth, mqReduce].forEach(off);
   }, []);
-
-  return isDesktop;
+  return ok;
 }
 
-function CustomCarousel() {
+export default function CustomCarousel() {
   const [api, setApi] = useState<CarouselApi | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [slideCount, setSlideCount] = useState(0);
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
 
-  // ==== ตั้งค่า autoplay เฉพาะเดสก์ท็อป ====
-  const isDesktop = useIsDesktopAutoplay();
-  const [isHovered, setIsHovered] = useState(false);
-  const autoplayMs = 4000; // ปรับความเร็ว
+  const isDesktop = useIsDesktopWide();
+  const [hovered, setHovered] = useState(false);
+  const autoplayMs = 4000;
+
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
+  /* ===== helper: start/stop ===== */
+  const stop = () => {
+    if (intervalRef.current != null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+  const start = () => {
+    if (!api || !isDesktop) return;
+    if (intervalRef.current != null) return;
+    intervalRef.current = window.setInterval(() => {
+      if (document.hidden) return;
+      if (hovered) return;
+      api.scrollNext();
+    }, autoplayMs);
+  };
+
+  /* ===== sync embla ===== */
   useEffect(() => {
     if (!api) return;
-    setSlideCount(api.scrollSnapList().length);
-    setCurrentSlide(api.selectedScrollSnap());
-
-    const onSelect = () => setCurrentSlide(api.selectedScrollSnap());
+    const setAll = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap());
+    };
+    setAll();
+    const onSelect = () => setCurrent(api.selectedScrollSnap());
+    api.on("reInit", setAll);
     api.on("select", onSelect);
     return () => {
-      if (api.off) api.off("select", onSelect);
+      api.off?.("reInit", setAll);
+      api.off?.("select", onSelect);
     };
   }, [api]);
 
-  // Hover pause (เดสก์ท็อปเท่านั้น)
+  /* ===== hover pause ===== */
   useEffect(() => {
-    if (!rootRef.current) return;
     const el = rootRef.current;
-    const onEnter = () => setIsHovered(true);
-    const onLeave = () => setIsHovered(false);
+    if (!el) return;
+    const onEnter = () => setHovered(true);
+    const onLeave = () => setHovered(false);
     el.addEventListener("mouseenter", onEnter);
     el.addEventListener("mouseleave", onLeave);
     return () => {
@@ -87,61 +114,37 @@ function CustomCarousel() {
     };
   }, []);
 
-  // Autoplay loop: เดสก์ท็อป & มี api & ไม่ hover & แท็บโฟกัส
+  /* ===== lifecycle autoplay ===== */
   useEffect(() => {
-    if (!api || !isDesktop) return;
+    if (!api || !isDesktop) { stop(); return; }
+    start();
 
-    let id: number | null = null;
+    const onPointerDown = () => stop();
+    const onPointerUp = () => start();
+    const onVisibility = () => (document.hidden ? stop() : start());
 
-    const tick = () => {
-      if (document.hidden) return; // หยุดตอนแท็บไม่โฟกัส
-      if (isHovered) return;       // หยุดตอน hover
-      // เลื่อนไปสไลด์ถัดไป
-      api.scrollNext();
-    };
-
-    id = window.setInterval(tick, autoplayMs);
-
-    // ถ้าผู้ใช้ลาก/คลิกเลื่อนด้วยตัวเอง ให้หยุด autoplay รอบนั้น
-    const stopOnce = () => {
-      if (id) {
-        clearInterval(id);
-        id = null;
-      }
-    };
-    api.on("pointerDown", stopOnce);
-    api.on("scroll", () => {}); // no-op แค่แน่ใจว่า api active
-
-    // Pause/Resume เมื่อ visibility เปลี่ยน
-    const onVis = () => {
-      if (document.hidden && id) {
-        clearInterval(id);
-        id = null;
-      } else if (!document.hidden && !id && !isHovered) {
-        id = window.setInterval(tick, autoplayMs);
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
+    api.on("pointerDown", onPointerDown);
+    api.on("pointerUp", onPointerUp);
+    api.on("settle", onPointerUp); // กันบางเคส pointerUp ไม่ยิง
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      if (id) clearInterval(id);
-      if (api.off) api.off("pointerDown", stopOnce);
-      document.removeEventListener("visibilitychange", onVis);
+      api.off?.("pointerDown", onPointerDown);
+      api.off?.("pointerUp", onPointerUp);
+      api.off?.("settle", onPointerUp);
+      document.removeEventListener("visibilitychange", onVisibility);
+      stop();
     };
-  }, [api, isDesktop, isHovered, autoplayMs]);
+  }, [api, isDesktop, hovered, autoplayMs]);
 
-  // ปุ่มจุด (ดอท)
-  const dots = useMemo(() => Array.from({ length: slideCount }), [slideCount]);
+  const dots = useMemo(() => Array.from({ length: count }), [count]);
 
   return (
-    <div
-      ref={rootRef}
-      className="h-full flex flex-col gap-3 font-thai select-none"
-    >
+    <div ref={rootRef} className="h-full flex flex-col gap-3 font-thai select-none">
       <Carousel opts={{ loop: true }} setApi={setApi} className="h-full [&>div]:h-full">
         <CarouselContent className="h-full">
-          {mockCarouselData.map((item, index) => (
-            <CarouselItem key={index} className="h-full">
+          {mockCarouselData.map((item, i) => (
+            <CarouselItem key={i} className="h-full">
               <div className="space-y-6 flex flex-1 flex-col">
                 <Image
                   src={item.image}
@@ -149,7 +152,7 @@ function CustomCarousel() {
                   width={0}
                   height={0}
                   className="h-auto object-contain w-full max-w-xl mx-auto block"
-                  priority={index === 0}
+                  priority={i === 0}
                   draggable={false}
                 />
                 <div className="text-white space-y-2 text-left">
@@ -163,19 +166,15 @@ function CustomCarousel() {
       </Carousel>
 
       <div className="flex gap-2 mt-3">
-        {dots.map((_, index) => (
+        {dots.map((_, i) => (
           <button
-            key={index}
-            onClick={() => api?.scrollTo(index)}
-            className={`w-3 h-3 rounded-full transition-opacity ${
-              index === currentSlide ? "bg-white" : "bg-white/50"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
+            key={i}
+            onClick={() => { api?.scrollTo(i); stop(); start(); }}
+            className={`w-3 h-3 rounded-full transition-opacity ${i === current ? "bg-white" : "bg-white/50"}`}
+            aria-label={`ไปสไลด์ที่ ${i + 1}`}
           />
         ))}
       </div>
     </div>
   );
 }
-
-export default CustomCarousel;
